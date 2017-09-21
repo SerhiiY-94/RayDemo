@@ -1,0 +1,58 @@
+branches:
+    only:
+        - master
+
+image:
+    - Visual Studio 2017
+
+clone_folder: c:\projects\raydemo
+
+clone_script:
+    - git clone -q --recursive --branch=%APPVEYOR_REPO_BRANCH% https://Apfel1994@bitbucket.org/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+    - git checkout -qf %APPVEYOR_REPO_COMMIT%
+
+shallow_clone: true
+
+matrix:
+    fast_finish: true
+
+platform:
+    - x86
+
+configuration:
+    - Release
+    
+init:
+    - set arch=
+    - if "%PLATFORM%"=="x64" ( set arch= Win64)
+    - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
+    - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
+    - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
+
+before_build:
+    - python download.py
+    - mkdir build
+    - cd build
+    - cmake .. -G %generator%
+        
+build:
+    project: build\ALL_BUILD.vcxproj
+
+after_build:
+    - cd ..
+    - 7z a demo_app.zip demo_app.exe
+    - 7z a demo_app.zip demo_lib.dll
+    - 7z a demo_app.zip assets
+    
+test_script:
+    - build\src\engine\tests\%CONFIGURATION%\test_engine
+    - build\src\math\tests\%CONFIGURATION%\test_math
+    - build\src\ray\tests\%CONFIGURATION%\test_ray
+    - build\src\ren\tests\%CONFIGURATION%\test_ren
+    - build\src\ren\SW\tests\%CONFIGURATION%\test_SW
+    - build\src\sys\tests\%CONFIGURATION%\test_sys
+    - build\src\ui\tests\%CONFIGURATION%\test_ui
+    
+artifacts:
+  - path: demo_app.zip
+    name: DemoApp
