@@ -184,6 +184,8 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
 
     auto new_scene = r->CreateScene();
 
+    math::vec3 view_origin, view_dir = { 0, 0, -1 };
+
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
     std::map<std::string, uint32_t> meshes;
@@ -209,6 +211,25 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
     };
 
     try {
+        if (js_scene.Has("camera")) {
+            const JsObject &js_cam = js_scene.at("camera");
+            if (js_cam.Has("view_origin")) {
+                const JsArray &js_view_origin = js_cam.at("view_origin");
+
+                view_origin.x = (float)((const JsNumber &)js_view_origin.at(0)).val;
+                view_origin.y = (float)((const JsNumber &)js_view_origin.at(1)).val;
+                view_origin.z = (float)((const JsNumber &)js_view_origin.at(2)).val;
+            }
+
+            if (js_cam.Has("view_dir")) {
+                const JsArray &js_view_dir = js_cam.at("view_dir");
+
+                view_dir.x = (float)((const JsNumber &)js_view_dir.at(0)).val;
+                view_dir.y = (float)((const JsNumber &)js_view_dir.at(1)).val;
+                view_dir.z = (float)((const JsNumber &)js_view_dir.at(2)).val;
+            }
+        }
+
         if (js_scene.Has("environment")) {
             const JsObject &js_env = js_scene.at("environment");
             const JsArray &js_sun_dir = js_env.at("sun_dir");
@@ -337,9 +358,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
         return nullptr;
     }
 
-    if (new_scene->current_cam() == 0xffffffff) {
-        new_scene->AddCamera(ray::Persp);
-    }
+    new_scene->AddCamera(ray::Persp, math::value_ptr(view_origin), math::value_ptr(view_dir), 45.0f);
 
     return new_scene;
 }
@@ -348,16 +367,16 @@ const float FORWARD_SPEED = 8.0f;
 }
 
 GSRayTest::GSRayTest(GameBase *game) : game_(game) {
-    state_manager_	= game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_			= game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
+    state_manager_  = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
+    ctx_            = game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
 
-    ui_renderer_	= game->GetComponent<ui::Renderer>(UI_RENDERER_KEY);
+    ui_renderer_    = game->GetComponent<ui::Renderer>(UI_RENDERER_KEY);
     ui_root_        = game->GetComponent<ui::BaseElement>(UI_ROOT_KEY);
 
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    ray_renderer_	= game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
 }
 
 GSRayTest::~GSRayTest() {
@@ -390,6 +409,10 @@ void GSRayTest::Enter() {
     using namespace math;
 
     ray_scene_ = LoadScene(ray_renderer_.get(), "./assets/scenes/sponza_simple.json");
+
+    const auto &cam = ray_scene_->GetCamera(0);
+    view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
+    view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
 }
 
 void GSRayTest::Exit() {
@@ -399,7 +422,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin), value_ptr(view_dir), 0);
+    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
 
     auto t1 = sys::GetTicks();
 
@@ -476,10 +499,10 @@ void GSRayTest::Update(int dt_ms) {
     using namespace math;
 
     vec3 up = { 0, 1, 0 };
-    vec3 side = normalize(cross(view_dir, up));
+    vec3 side = normalize(cross(view_dir_, up));
 
-    view_origin += view_dir * forward_speed_;
-    view_origin += side * side_speed_;
+    view_origin_ += view_dir_ * forward_speed_;
+    view_origin_ += side * side_speed_;
 
     if (forward_speed_ != 0 || side_speed_ != 0 || animate_) {
         invalidate_preview_ = true;
@@ -526,8 +549,8 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
     case InputManager::RAW_INPUT_P1_MOVE:
         if (view_grabbed_) {
             vec3 up = { 0, 1, 0 };
-            vec3 side = normalize(cross(view_dir, up));
-            up = cross(side, view_dir);
+            vec3 side = normalize(cross(view_dir_, up));
+            up = cross(side, view_dir_);
 
             mat4 rot;
             rot = rotate(rot, 0.01f * evt.move.dx, up);
@@ -535,7 +558,7 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
 
             mat3 rot_m3 = mat3(rot);
 
-            view_dir = view_dir * rot_m3;
+            view_dir_ = view_dir_ * rot_m3;
 
             invalidate_preview_ = true;
         }

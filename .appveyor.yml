@@ -40,9 +40,9 @@ build:
 
 after_build:
     - cd ..
-    - 7z a demo_app.zip demo_app.exe
-    - 7z a demo_app.zip demo_lib.dll
-    - 7z a demo_app.zip assets
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip demo_app.exe
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip demo_lib.dll
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip assets
     
 test_script:
     - build\src\engine\tests\%CONFIGURATION%\test_engine
@@ -54,5 +54,5 @@ test_script:
     - build\src\ui\tests\%CONFIGURATION%\test_ui
     
 artifacts:
-  - path: demo_app.zip
+  - path: demo_app_%APPVEYOR_BUILD_VERSION%.zip
     name: DemoApp
