@@ -279,6 +279,9 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
             if (js_mat_obj.Has("roughness")) {
                 const JsNumber &js_roughness = js_mat_obj.at("roughness");
                 mat_desc.roughness = (float)js_roughness.val;
+            } else if (js_mat_obj.Has("strength")) {
+                const JsNumber &js_strength = js_mat_obj.at("strength");
+                mat_desc.strength = (float)js_strength.val;
             }
 
             if (js_mat_obj.Has("fresnel")) {
@@ -290,6 +293,23 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
                 mat_desc.type = ray::DiffuseMaterial;
             } else if (js_type.val == "glossy") {
                 mat_desc.type = ray::GlossyMaterial;
+            } else if (js_type.val == "emissive") {
+                mat_desc.type = ray::EmissiveMaterial;
+            } else if (js_type.val == "mix") {
+                mat_desc.type = ray::MixMaterial;
+
+                const JsArray &mix_materials = js_mat_obj.at("materials");
+                for (const auto &m : mix_materials.elements) {
+                    auto it = materials.find(static_cast<const JsString &>(m).val);
+                    if (it != materials.end()) {
+                        if (mat_desc.mix_materials[0] == 0xffffffff) {
+                            mat_desc.mix_materials[0] = it->second;
+                        } else {
+                            mat_desc.mix_materials[1] = it->second;
+                        }
+                    }
+                }
+
             } else {
                 throw std::runtime_error("unknown material type");
             }
@@ -387,15 +407,7 @@ void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
     if (ray_scene_) {
         ray::environment_desc_t env_desc;
 
-        env_desc.sun_col[0] = 8.0f;//4;
-        env_desc.sun_col[1] = 8.0f;//4;
-        env_desc.sun_col[2] = 6.0f;//3;
-
-        env_desc.sky_col[0] = 1.6f;
-        env_desc.sky_col[1] = 2.8f;
-        env_desc.sky_col[2] = 3.9f;
-
-        env_desc.sun_softness = 0.00001f;
+        ray_scene_->GetEnvironment(env_desc);
 
         memcpy(&env_desc.sun_dir[0], math::value_ptr(sun_dir), 3 * sizeof(float));
 
