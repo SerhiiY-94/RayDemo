@@ -309,7 +309,8 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
                         }
                     }
                 }
-
+            } else if (js_type.val == "transparent") {
+                mat_desc.type = ray::TransparentMaterial;
             } else {
                 throw std::runtime_error("unknown material type");
             }
