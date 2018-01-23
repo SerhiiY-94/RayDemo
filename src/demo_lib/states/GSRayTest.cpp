@@ -289,10 +289,17 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::strin
                 mat_desc.fresnel = (float)js_fresnel.val;
             }
 
+            if (js_mat_obj.Has("ior")) {
+                const JsNumber &js_ior = js_mat_obj.at("ior");
+                mat_desc.ior = (float)js_ior.val;
+            }
+
             if (js_type.val == "diffuse") {
                 mat_desc.type = ray::DiffuseMaterial;
             } else if (js_type.val == "glossy") {
                 mat_desc.type = ray::GlossyMaterial;
+            } else if (js_type.val == "refractive") {
+                mat_desc.type = ray::RefractiveMaterial;
             } else if (js_type.val == "emissive") {
                 mat_desc.type = ray::EmissiveMaterial;
             } else if (js_type.val == "mix") {
