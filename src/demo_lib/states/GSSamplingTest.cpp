@@ -16,9 +16,6 @@
 #include <ray/internal/Halton.h>
 
 #include "../Viewer.h"
-#include "../comp/Drawable.h"
-#include "../comp/Transform.h"
-#include "../renderer/Renderer.h"
 
 namespace GSSamplingTestInternal {
 float EvalFunc(const float x, const float y, const float xmax, const float ymax) {
@@ -84,7 +81,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
     int sample_limit = 8;
     if (++iteration_ > sample_limit) {
-        //return;
+        return;
     }
 
     pixels_.resize(width * height * 4);
@@ -97,7 +94,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
     uint32_t nsamplesx = 4, nsamplesy = 1;
 
-#if 0
+#if 1
     for (uint32_t y = 0; y < height; ++y) {
         if (y < height / 4) {
             for (uint32_t x = 0; x < width; ++x) {
@@ -189,7 +186,7 @@ void GSSamplingTest::Draw(float dt_s) {
     }
 #endif
 
-#if 1
+#if 0
     int i = (int)iteration_ * nsamplesx;
     for (int j = 0; j < nsamplesx; j++) {
         //float rx = RadicalInverse<3>(i + j);
@@ -216,7 +213,7 @@ void GSSamplingTest::Draw(float dt_s) {
     swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
 #endif
 
-#if 0
+#if 1
     {
         // ui draw
         ui_renderer_->BeginDraw();

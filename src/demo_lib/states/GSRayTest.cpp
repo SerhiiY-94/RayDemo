@@ -20,7 +20,6 @@
 #include <ray/RendererBase.h>
 
 #include "../Viewer.h"
-#include "../renderer/Renderer.h"
 #include "../ui/FontStorage.h"
 
 namespace {
@@ -458,7 +457,7 @@ void GSRayTest::Draw(float dt_s) {
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
-    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (void *)pixel_data, 1);
+    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 #endif
 
     int dt_ms = int(sys::GetTicks() - t1);

@@ -9,16 +9,10 @@
 #include <sys/Log.h>
 #include <sys/Json.h>
 
-#include "renderer/Renderer.h"
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
-namespace ViewerConstants {
-const int CURSOR_SIZE = 64;
-}
-
 Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) {
-    using namespace ViewerConstants;
     using namespace math;
 
     auto ctx = GetComponent<ren::Context>(REN_CONTEXT_KEY);
@@ -38,15 +32,6 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
         if (!main_config.Read(ss)) {
             throw std::runtime_error("Unable to load main config!");
         }
-    }
-
-    const JsObject &gfx_settings = main_config.at("gfx_settings");
-
-    {
-        // create renderer for player etc.
-        const JsObject &general_settings = gfx_settings.at("general");
-        auto renderer = std::make_shared<Renderer>(*ctx, general_settings);
-        AddComponent(RENDERER_KEY, renderer);
     }
 
     const JsObject &ui_settings = main_config.at("ui_settings");
@@ -80,9 +65,6 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
 }
 
 void Viewer::Resize(int w, int h) {
-    using namespace ViewerConstants;
-    using namespace math;
-
     auto ray_renderer = GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
     if (ray_renderer) {
         ray_renderer->Resize(w, h);
