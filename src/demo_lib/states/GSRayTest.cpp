@@ -480,25 +480,25 @@ void GSRayTest::Draw(float dt_s) {
         float font_height = font_->height(ui_root_.get());
 
         std::string stats1;
-        stats1 += "res:     ";
+        stats1 += "res:   ";
         stats1 += std::to_string(ray_renderer_->size().first);
         stats1 += "x";
         stats1 += std::to_string(ray_renderer_->size().second);
 
         std::string stats2;
-        stats2 += "tris:     ";
+        stats2 += "tris:  ";
         stats2 += std::to_string(ray_scene_->triangle_count());
 
         std::string stats3;
-        stats3 += "nodes:  ";
+        stats3 += "nodes: ";
         stats3 += std::to_string(ray_scene_->node_count());
 
         std::string stats4;
-        stats4 += "pass:    ";
+        stats4 += "pass:  ";
         stats4 += std::to_string(st.iterations_count);
 
         std::string stats5;
-        stats5 += "time:     ";
+        stats5 += "time:  ";
         stats5 += std::to_string(cur_time_stat_ms_);
         stats5 += " ms";
 
