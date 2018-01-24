@@ -37,8 +37,10 @@ class GSRayTest : public GameState {
 
     bool animate_ = false;
     bool view_grabbed_ = false;
+    bool view_targeted_ = false;
     math::vec3 view_origin_ = { 0, 20, 3 },
-               view_dir_ = { -1, 0, 0 };
+               view_dir_ = { -1, 0, 0 },
+               view_target_ = { 0, 0, 0 };
 
     math::vec3 sun_dir_ = { 0, 1, 0 };
 

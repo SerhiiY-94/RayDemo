@@ -173,14 +173,7 @@ std::vector<ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h
     return tex_data;
 }
 
-std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const std::string &file_name) {
-    JsObject js_scene;
-
-    {
-        std::ifstream in_file(file_name, std::ios::binary);
-        if (!js_scene.Read(in_file)) return nullptr;
-    }
-
+std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &js_scene) {
     auto new_scene = r->CreateScene();
 
     math::vec3 view_origin, view_dir = { 0, 0, -1 };
@@ -427,7 +420,30 @@ void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
 void GSRayTest::Enter() {
     using namespace math;
 
-    ray_scene_ = LoadScene(ray_renderer_.get(), "./assets/scenes/sponza_simple.json");
+    JsObject js_scene;
+
+    {
+        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        if (!js_scene.Read(in_file)) {
+            LOGE("Failed to parse scene file!");
+        }
+    }
+
+    if (js_scene.Size()) {
+        ray_scene_ = LoadScene(ray_renderer_.get(), js_scene);
+
+        if (js_scene.Has("camera")) {
+            const JsObject &js_cam = js_scene.at("camera");
+            if (js_cam.Has("view_target")) {
+                const JsArray &js_view_target = (const JsArray &)js_cam.at("view_target");
+
+                view_targeted_ = true;
+                view_target_.x = (float)((const JsNumber &)js_view_target.at(0)).val;
+                view_target_.y = (float)((const JsNumber &)js_view_target.at(1)).val;
+                view_target_.z = (float)((const JsNumber &)js_view_target.at(2)).val;
+            }
+        }
+    }
 
     const auto &cam = ray_scene_->GetCamera(0);
     view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
@@ -577,7 +593,14 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
 
             mat3 rot_m3 = mat3(rot);
 
-            view_dir_ = view_dir_ * rot_m3;
+            if (!view_targeted_) {
+                view_dir_ = view_dir_ * rot_m3;
+            } else {
+                vec3 dir = view_origin_ - view_target_;
+                dir = dir * rot_m3;
+                view_origin_ = view_target_ + dir;
+                view_dir_ = normalize(-dir);
+            }
 
             invalidate_preview_ = true;
         }
