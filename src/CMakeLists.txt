@@ -57,6 +57,11 @@ if(WIN32)
 else(WIN32)
     include(FindPkgConfig)
     pkg_search_module (SDL2 REQUIRED sdl2)
+
+    if(APPLE)
+        set(SDL2_INCLUDE_DIRS /usr/local/include)
+        set(SDL2_LIBRARIES /usr/local/lib)
+    endif(APPLE)
 endif(WIN32)
 
 include_directories(libs)
