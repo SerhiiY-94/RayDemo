@@ -8,9 +8,7 @@
 
 class GameBase;
 class GameStateManager;
-class GCursor;
 class FontStorage;
-class Renderer;
 
 namespace ray {
 class RendererBase;
@@ -56,7 +54,6 @@ class GSRayTest : public GameState {
     void UpdateEnvironment(const math::vec3 &sun_dir);
 public:
     explicit GSRayTest(GameBase *game);
-    ~GSRayTest();
 
     void Enter() override;
     void Exit() override;

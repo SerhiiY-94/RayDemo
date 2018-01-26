@@ -399,13 +399,9 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
 }
 
-GSRayTest::~GSRayTest() {
-
-}
-
 void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
     if (ray_scene_) {
-        ray::environment_desc_t env_desc;
+        ray::environment_desc_t env_desc = {};
 
         ray_scene_->GetEnvironment(env_desc);
 
@@ -476,7 +472,7 @@ void GSRayTest::Draw(float dt_s) {
     swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 #endif
 
-    int dt_ms = int(sys::GetTicks() - t1);
+    auto dt_ms = int(sys::GetTicks() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 
@@ -490,7 +486,7 @@ void GSRayTest::Draw(float dt_s) {
         // ui draw
         ui_renderer_->BeginDraw();
 
-        ray::RendererBase::stats_t st;
+        ray::RendererBase::stats_t st = {};
         ray_renderer_->GetStats(st);
 
         float font_height = font_->height(ui_root_.get());

@@ -10,10 +10,12 @@ class GameBase;
 class GameStateManager;
 class GCursor;
 class FontStorage;
+class Random;
 class Renderer;
 
 namespace ui {
 class BaseElement;
+class BitmapFont;
 class Renderer;
 }
 
@@ -22,6 +24,8 @@ class GSSamplingTest : public GameState {
     std::weak_ptr<GameStateManager> state_manager_;
     std::shared_ptr<ren::Context> ctx_;
     std::shared_ptr<Renderer> renderer_;
+
+    std::shared_ptr<Random> random_;
 
     std::shared_ptr<ui::Renderer> ui_renderer_;
     std::shared_ptr<ui::BaseElement> ui_root_;
@@ -32,7 +36,6 @@ class GSSamplingTest : public GameState {
 
 public:
     explicit GSSamplingTest(GameBase *game);
-    ~GSSamplingTest();
 
     void Enter() override;
     void Exit() override;

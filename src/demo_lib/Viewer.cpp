@@ -6,7 +6,6 @@
 #include <ray/RendererFactory.h>
 #include <ren/Context.h>
 #include <sys/AssetFile.h>
-#include <sys/Log.h>
 #include <sys/Json.h>
 
 #include "states/GSCreate.h"

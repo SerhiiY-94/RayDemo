@@ -7,6 +7,7 @@
 #endif
 
 #include <engine/GameStateManager.h>
+#include <engine/Random.h>
 #include <ren/Context.h>
 #include <sys/Json.h>
 #include <sys/Log.h>
@@ -16,25 +17,11 @@
 #include <ray/internal/Halton.h>
 
 #include "../Viewer.h"
+#include "../ui/FontStorage.h"
 
 namespace GSSamplingTestInternal {
 float EvalFunc(const float x, const float y, const float xmax, const float ymax) {
-    //return 1. / 2. + 1. / 2. * powf(1. - y / ymax, 3.) * sin(2. * math::pi<float>() * (x / xmax) * exp(8. * (x / xmax)));
-    return 0.5f + 0.5f * sin(2.0f * math::pi<float>() * (x / xmax) * exp(8.0f * (x / xmax)));
-    //float d = sqrt(xmax * xmax + ymax * ymax);
-    //float l = sqrt(x * x + y * y);
-    //float t = (x * 0.995 + y * 0.1) / xmax;
-    //double f = 16 * 128.0 * x / xmax;
-    //return std::cos(t * t * 1024) * 0.5f + 0.5f;
-    /*if (math::fract(t * (128 + t * 128)) < 0.5f) {
-    	return 1.0f;
-    } else {
-    	return 0.0f;
-    }*/
-}
-
-double drand48() {
-    return double(rand()) / RAND_MAX;
+    return 0.5f + 0.5f * std::sin(2.0f * math::pi<float>() * (x / xmax) * std::exp(8.0f * (x / xmax)));
 }
 
 std::vector<uint16_t> radical_inv_perms;
@@ -45,15 +32,13 @@ GSSamplingTest::GSSamplingTest(GameBase *game) : game_(game) {
     ctx_			= game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
     renderer_		= game->GetComponent<Renderer>(RENDERER_KEY);
 
+    random_         = game->GetComponent<Random>(RANDOM_KEY);
+
     ui_renderer_ = game->GetComponent<ui::Renderer>(UI_RENDERER_KEY);
     ui_root_ = game->GetComponent<ui::BaseElement>(UI_ROOT_KEY);
 
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
-}
-
-GSSamplingTest::~GSSamplingTest() {
-
 }
 
 void GSSamplingTest::Enter() {
@@ -77,7 +62,7 @@ void GSSamplingTest::Draw(float dt_s) {
     //renderer_->set_current_cam(&cam_);
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    uint32_t width = game_->width, height = game_->height;
+    uint32_t width = (uint32_t)game_->width, height = (uint32_t)game_->height;
 
     int sample_limit = 8;
     if (++iteration_ > sample_limit) {
@@ -118,7 +103,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        sum += EvalFunc(x + drand48(), y + drand48(), width, height);
+                        sum += EvalFunc((float)(x + random_->GetNormalizedDouble()), (float)(y + random_->GetNormalizedDouble()), width, height);
                     }
                 }
 
@@ -134,7 +119,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
                 for (uint32_t ny = 0; ny < nsamplesy; ++ny) {
                     for (uint32_t nx = 0; nx < nsamplesx; ++nx) {
-                        sum += EvalFunc(x + (nx + drand48()) / nsamplesx, y + (ny + drand48()) / nsamplesy, width, height);
+                        sum += EvalFunc((float)(x + (nx + random_->GetNormalizedDouble()) / nsamplesx), (float)(y + (ny + random_->GetNormalizedDouble()) / nsamplesy), width, height);
                     }
                 }
 
