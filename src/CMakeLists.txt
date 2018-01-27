@@ -19,7 +19,6 @@ endif()
 set(SDL_STATIC ON)
 
 add_definitions(-DGLEW_STATIC)
-include_directories(libs/Shiny/include)
 
 include_directories(libs/ocl/include)
 
@@ -84,7 +83,6 @@ add_subdirectory(ren)
 add_subdirectory(sys)
 add_subdirectory(ui)
 
-add_subdirectory(libs/Shiny)
 add_subdirectory(libs/SOIL2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -108,8 +106,7 @@ set_target_properties(test_engine
                       test_sys
                       test_ui PROPERTIES FOLDER Tests)
 
-set_target_properties(Shiny
-                      SOIL2 PROPERTIES FOLDER _)
+set_target_properties(SOIL2 PROPERTIES FOLDER _)
 
 add_test(EngineTest     engine/tests/test_engine)
 add_test(MathTest       math/tests/test_math)
