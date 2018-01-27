@@ -3,22 +3,7 @@ project(RayDemo)
 
 set(CMAKE_CXX_STANDARD 11)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (UNIX)
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    else()
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -m32")
-       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-       set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -shared-libgcc -shared-libstdc++")
-    endif()
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  
-endif()
-
 set(SDL_STATIC ON)
-
-add_definitions(-DGLEW_STATIC)
 
 include_directories(libs/ocl/include)
 
@@ -43,8 +28,13 @@ endif()
 
 if(WIN32)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(SDL2_INCLUDE_DIRS libs/SDL2/i686-w64-mingw32/include)
-        set(SDL2_LIBRARIES "libs/SDL2/i686-w64-mingw32/lib")
+		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(SDL2_INCLUDE_DIRS libs/SDL2/x86_64-w64-mingw32/include)
+			set(SDL2_LIBRARIES "libs/SDL2/x86_64-w64-mingw32/lib")
+		else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(SDL2_INCLUDE_DIRS libs/SDL2/i686-w64-mingw32/include)
+			set(SDL2_LIBRARIES "libs/SDL2/i686-w64-mingw32/lib")
+		endif()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(SDL2_LIBRARIES "libs/SDL2/lib/x64")
@@ -71,7 +61,6 @@ link_directories(${SDL2_LIBRARIES})
 
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 #set(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
-#set(WORKING_DIRECTORY "D:/ClionProjects/RaceGame/")
 enable_testing()
 
 add_subdirectory(engine)
@@ -82,8 +71,6 @@ add_subdirectory(ray)
 add_subdirectory(ren)
 add_subdirectory(sys)
 add_subdirectory(ui)
-
-add_subdirectory(libs/SOIL2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -105,8 +92,6 @@ set_target_properties(test_engine
                       test_SW
                       test_sys
                       test_ui PROPERTIES FOLDER Tests)
-
-set_target_properties(SOIL2 PROPERTIES FOLDER _)
 
 add_test(EngineTest     engine/tests/test_engine)
 add_test(MathTest       math/tests/test_math)
