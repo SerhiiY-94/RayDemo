@@ -263,6 +263,13 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsString &js_main_tex = js_mat_obj.at("main_texture");
             mat_desc.main_texture = get_texture(js_main_tex.val);
 
+            if (js_mat_obj.Has("main_color")) {
+                const JsArray &js_main_color = js_mat_obj.at("main_color");
+                mat_desc.main_color[0] = (float)((const JsNumber &)js_main_color.at(0)).val;
+                mat_desc.main_color[1] = (float)((const JsNumber &)js_main_color.at(1)).val;
+                mat_desc.main_color[2] = (float)((const JsNumber &)js_main_color.at(2)).val;
+            }
+
             if (js_mat_obj.Has("normal_map")) {
                 const JsString &js_normal_map = js_mat_obj.at("normal_map");
                 mat_desc.normal_map = get_texture(js_normal_map.val);
@@ -419,7 +426,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     {
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/honda.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
