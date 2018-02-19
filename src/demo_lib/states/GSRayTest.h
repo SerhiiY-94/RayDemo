@@ -15,6 +15,10 @@ class RendererBase;
 class SceneBase;
 }
 
+namespace sys {
+class ThreadPool;
+}
+
 namespace ui {
 class BaseElement;
 class BitmapFont;
@@ -32,6 +36,8 @@ class GSRayTest : public GameState {
 
     std::shared_ptr<ray::RendererBase> ray_renderer_;
     std::shared_ptr<ray::SceneBase> ray_scene_;
+
+    std::shared_ptr<sys::ThreadPool> threads_;
 
     bool animate_ = false;
     bool view_grabbed_ = false;

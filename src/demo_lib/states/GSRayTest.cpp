@@ -15,6 +15,7 @@
 #include <sys/Json.h>
 #include <sys/Log.h>
 #include <sys/Time_.h>
+#include <sys/ThreadPool.h>
 #include <ui/Renderer.h>
 
 #include <ray/RendererBase.h>
@@ -426,7 +427,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     {
-        std::ifstream in_file("./assets/scenes/honda.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -451,6 +452,9 @@ void GSRayTest::Enter() {
     const auto &cam = ray_scene_->GetCamera(0);
     view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
     view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
+
+    auto num_threads = std::max(1u, std::thread::hardware_concurrency());
+    threads_ = std::make_shared<sys::ThreadPool>(num_threads);
 }
 
 void GSRayTest::Exit() {
@@ -468,7 +472,33 @@ void GSRayTest::Draw(float dt_s) {
         ray_renderer_->Clear();
         invalidate_preview_ = false;
     }
-    ray_renderer_->RenderScene(ray_scene_);
+
+    const auto rt = ray_renderer_->type();
+    const auto sz = ray_renderer_->size();
+
+    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+        const int BUCKET_SIZE = 128;
+
+        auto render_job = [this](const ray::region_t &r) { ray_renderer_->RenderScene(ray_scene_, r); };
+        
+        std::vector<std::future<void>> events;
+
+        for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
+            for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
+                auto reg = ray::region_t{ x, y, 
+                    std::min(sz.first - x, BUCKET_SIZE),
+                    std::min(sz.second - y, BUCKET_SIZE) };
+
+                events.push_back(threads_->enqueue(render_job, reg));
+            }
+        }
+
+        for (const auto &r : events) {
+            r.wait();
+        }
+    } else {
+        ray_renderer_->RenderScene(ray_scene_);
+    }
 
     int w, h;
 
