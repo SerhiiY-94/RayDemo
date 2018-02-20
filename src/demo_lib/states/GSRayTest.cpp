@@ -493,8 +493,8 @@ void GSRayTest::Draw(float dt_s) {
             }
         }
 
-        for (const auto &r : events) {
-            r.wait();
+        for (const auto &e : events) {
+            e.wait();
         }
     } else {
         ray_renderer_->RenderScene(ray_scene_);
