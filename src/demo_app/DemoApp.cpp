@@ -220,9 +220,9 @@ void DemoApp::PollEvents() {
     auto input_manager = viewer_->GetComponent<InputManager>(INPUT_MANAGER_KEY);
     if (!input_manager) return;
 
-    SDL_Event e;
+    SDL_Event e = {};
     InputManager::RawInputButton button;
-    InputManager::Event evt;
+    InputManager::Event evt = {};
     while (SDL_PollEvent(&e)) {
         evt.type = InputManager::RAW_INPUT_NONE;
         switch (e.type) {
@@ -330,15 +330,17 @@ void DemoApp::LoadLib(int w, int h) {
 
     viewer_.reset();
 
-    GameBase *(__cdecl *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
-
     demo_lib_ = {};
 #if defined(WIN32)
+    GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
+
     system("copy \"demo_lib.dll\" \"demo_lib_.dll\"");
     demo_lib_ = sys::DynLib{ "demo_lib_.dll" };
 #else
-    system("cp \"libdemo_lib.so\" \"libdemo_lib_.so\"");
-    demo_lib_ = sys::DynLib{ "libdemo_lib_.so" };
+    GameBase * ( *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
+
+    system(R"(cp "demo_lib.so" "demo_lib_.so")");
+    demo_lib_ = sys::DynLib{ "./demo_lib_.so" };
 #endif
 
     if (demo_lib_) {

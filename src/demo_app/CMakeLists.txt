@@ -17,7 +17,7 @@ IF(WIN32)
     ENDIF(SDL_STATIC)
 ELSE(WIN32)
     #set(LIBS X11 :libSDL2.a dl pthread GL glut c)
-    set(LIBS X11 SDL2 dl pthread GL glut c)
+    set(LIBS X11 SDL2 dl pthread GL c)
 ENDIF(WIN32)
 
 set(SOURCE_FILES    main.cpp
