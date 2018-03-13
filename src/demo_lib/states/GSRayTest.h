@@ -6,14 +6,11 @@
 #include <ren/Program.h>
 #include <ren/Texture.h>
 
+#include <ray/RendererBase.h>
+
 class GameBase;
 class GameStateManager;
 class FontStorage;
-
-namespace ray {
-class RendererBase;
-class SceneBase;
-}
 
 namespace sys {
 class ThreadPool;
@@ -57,6 +54,9 @@ class GSRayTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
+    std::vector<ray::RegionContext> region_contexts_;
+
+    void UpdateRegionContexts();
     void UpdateEnvironment(const math::vec3 &sun_dir);
 public:
     explicit GSRayTest(GameBase *game);

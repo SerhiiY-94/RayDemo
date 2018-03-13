@@ -18,8 +18,6 @@
 #include <sys/ThreadPool.h>
 #include <ui/Renderer.h>
 
-#include <ray/RendererBase.h>
-
 #include "../Viewer.h"
 #include "../ui/FontStorage.h"
 
@@ -407,6 +405,30 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
 }
 
+void GSRayTest::UpdateRegionContexts() {
+    region_contexts_.clear();
+
+    const auto rt = ray_renderer_->type();
+    const auto sz = ray_renderer_->size();
+
+    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+        const int BUCKET_SIZE = 128;
+
+        for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
+            for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
+                auto rect = ray::rect_t{ x, y, 
+                    std::min(sz.first - x, BUCKET_SIZE),
+                    std::min(sz.second - y, BUCKET_SIZE) };
+
+                region_contexts_.emplace_back(rect);
+            }
+        }
+    } else {
+        auto rect = ray::rect_t{ 0, 0, sz.first, sz.second };
+        region_contexts_.emplace_back(rect);
+    }
+}
+
 void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
     if (ray_scene_) {
         ray::environment_desc_t env_desc = {};
@@ -455,6 +477,8 @@ void GSRayTest::Enter() {
 
     auto num_threads = std::max(1u, std::thread::hardware_concurrency());
     threads_ = std::make_shared<sys::ThreadPool>(num_threads);
+
+    UpdateRegionContexts();
 }
 
 void GSRayTest::Exit() {
@@ -474,30 +498,21 @@ void GSRayTest::Draw(float dt_s) {
     }
 
     const auto rt = ray_renderer_->type();
-    const auto sz = ray_renderer_->size();
 
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        const int BUCKET_SIZE = 128;
-
-        auto render_job = [this](const ray::region_t &r) { ray_renderer_->RenderScene(ray_scene_, r); };
+        auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
         
         std::vector<std::future<void>> events;
 
-        for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
-            for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
-                auto reg = ray::region_t{ x, y, 
-                    std::min(sz.first - x, BUCKET_SIZE),
-                    std::min(sz.second - y, BUCKET_SIZE) };
-
-                events.push_back(threads_->enqueue(render_job, reg));
-            }
+        for (int i = 0; i < (int)region_contexts_.size(); i++) {
+            events.push_back(threads_->enqueue(render_job, i));
         }
 
         for (const auto &e : events) {
             e.wait();
         }
     } else {
-        ray_renderer_->RenderScene(ray_scene_);
+        ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
     }
 
     int w, h;
@@ -679,7 +694,7 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
-
+        UpdateRegionContexts();
         break;
     default:
         break;
