@@ -339,7 +339,7 @@ void DemoApp::LoadLib(int w, int h) {
 #else
     GameBase * ( *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 
-    system(R"(cp "demo_lib.so" "demo_lib_.so")");
+    if (system(R"(cp "demo_lib.so" "demo_lib_.so")") == -1) LOGE("system call failed");
     demo_lib_ = sys::DynLib{ "./demo_lib_.so" };
 #endif
 
