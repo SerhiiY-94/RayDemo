@@ -63,12 +63,3 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
     state_manager->Push(GSCreate(GS_RAY_TEST, this));
 }
 
-void Viewer::Resize(int w, int h) {
-    auto ray_renderer = GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
-    if (ray_renderer) {
-        ray_renderer->Resize(w, h);
-    }
-
-    GameBase::Resize(w, h);
-}
-

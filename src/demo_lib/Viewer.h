@@ -10,7 +10,5 @@ const char RAY_RENDERER_KEY[]			= "ray_renderer";
 class Viewer : public GameBase {
 public:
     Viewer(int w, int h, const char *local_dir);
-
-    void Resize(int w, int h) override;
 };
 

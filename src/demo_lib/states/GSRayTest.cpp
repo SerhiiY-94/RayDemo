@@ -559,7 +559,7 @@ void GSRayTest::Draw(float dt_s) {
 
         std::string stats4;
         stats4 += "pass:  ";
-        stats4 += std::to_string(st.iterations_count);
+        stats4 += std::to_string(region_contexts_[0].iteration);
 
         std::string stats5;
         stats5 += "time:  ";
@@ -694,6 +694,7 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
+        ray_renderer_->Resize(evt.point.x, evt.point.y);
         UpdateRegionContexts();
         break;
     default:
