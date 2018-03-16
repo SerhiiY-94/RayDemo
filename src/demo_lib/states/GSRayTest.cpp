@@ -694,7 +694,7 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
-        ray_renderer_->Resize(evt.point.x, evt.point.y);
+        ray_renderer_->Resize((int)evt.point.x, (int)evt.point.y);
         UpdateRegionContexts();
         break;
     default:
