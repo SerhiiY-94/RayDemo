@@ -494,6 +494,7 @@ void GSRayTest::Draw(float dt_s) {
 
     if (invalidate_preview_) {
         ray_renderer_->Clear();
+        UpdateRegionContexts();
         invalidate_preview_ = false;
     }
 
