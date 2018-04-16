@@ -7,10 +7,15 @@ set(SOURCE_FILES    exports.cpp
 					Viewer.h
                     Viewer.cpp)
 
+set(LOAD_SOURCES  load/Load.h
+				  load/Load.cpp)
+
 set(STATES_SOURCES  states/GSCreate.h
 					states/GSCreate.cpp
 					states/GSRayTest.h
 					states/GSRayTest.cpp
+					states/GSRayBucketTest.h
+					states/GSRayBucketTest.cpp
 					states/GSSamplingTest.h
 					states/GSSamplingTest.cpp)
 
@@ -27,6 +32,9 @@ endif()
 list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
 #set_source_files_properties(${SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 source_group("src" FILES ${SOURCE_FILES})
+
+list(APPEND ALL_SOURCE_FILES ${LOAD_SOURCES})
+source_group("src\\load" FILES ${LOAD_SOURCES})
 
 list(APPEND ALL_SOURCE_FILES ${STATES_SOURCES})
 set_source_files_properties(${STATES_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)

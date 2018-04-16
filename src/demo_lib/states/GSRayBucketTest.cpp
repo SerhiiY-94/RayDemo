@@ -1,4 +1,4 @@
-#include "GSRayTest.h"
+#include "GSRayBucketTest.h"
 
 #include <fstream>
 #include <sstream>
@@ -9,6 +9,9 @@
 #endif
 
 #include <engine/GameStateManager.h>
+#include <ren/Context.h>
+#include <ren/Utils.h>
+#include <sys/AssetFile.h>
 #include <sys/Json.h>
 #include <sys/Log.h>
 #include <sys/Time_.h>
@@ -19,11 +22,14 @@
 #include "../load/Load.h"
 #include "../ui/FontStorage.h"
 
-namespace GSRayTestInternal {
+namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
+const int BUCKET_SIZE = 32;
+const int SPP = 64;
+const int SPP_PORTION = 8;
 }
 
-GSRayTest::GSRayTest(GameBase *game) : game_(game) {
+GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
     state_manager_  = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
     ctx_            = game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
 
@@ -36,15 +42,17 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
 }
 
-void GSRayTest::UpdateRegionContexts() {
+void GSRayBucketTest::UpdateRegionContexts() {
+    using namespace GSRayBucketTestInternal;
+
     region_contexts_.clear();
+    last_reg_context_ = 0;
+    cur_spp_ = 0;
 
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        const int BUCKET_SIZE = 128;
-
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
                 auto rect = ray::rect_t{ x, y, 
@@ -60,7 +68,7 @@ void GSRayTest::UpdateRegionContexts() {
     }
 }
 
-void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
+void GSRayBucketTest::UpdateEnvironment(const math::vec3 &sun_dir) {
     if (ray_scene_) {
         ray::environment_desc_t env_desc = {};
 
@@ -74,7 +82,7 @@ void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
     }
 }
 
-void GSRayTest::Enter() {
+void GSRayBucketTest::Enter() {
     using namespace math;
 
     JsObject js_scene;
@@ -109,14 +117,25 @@ void GSRayTest::Enter() {
     auto num_threads = std::max(1u, std::thread::hardware_concurrency());
     threads_ = std::make_shared<sys::ThreadPool>(num_threads);
 
+    num_buckets_ = (int)num_threads;
+    color_table_.resize(num_buckets_ * 3);
+
+    for (int i = 0; i < num_buckets_; i++) {
+        color_table_[i * 3 + 0] = float(rand())/RAND_MAX;
+        color_table_[i * 3 + 1] = float(rand())/RAND_MAX;
+        color_table_[i * 3 + 2] = float(rand())/RAND_MAX;
+    }
+
     UpdateRegionContexts();
 }
 
-void GSRayTest::Exit() {
+void GSRayBucketTest::Exit() {
 
 }
 
-void GSRayTest::Draw(float dt_s) {
+void GSRayBucketTest::Draw(float dt_s) {
+    using namespace GSRayBucketTestInternal;
+
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
@@ -131,21 +150,33 @@ void GSRayTest::Draw(float dt_s) {
 
     const auto rt = ray_renderer_->type();
 
+    auto last_reg_context = last_reg_context_;
+
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
+        auto render_job = [this](int i) { for (int j = 0; j < SPP_PORTION; j++) ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
         
         std::vector<std::future<void>> events;
 
-        for (int i = 0; i < (int)region_contexts_.size(); i++) {
-            events.push_back(threads_->enqueue(render_job, i));
+        for (int i = 0; i < num_buckets_; i++) {
+            if (last_reg_context + i >= (int)region_contexts_.size()) break;
+
+            events.push_back(threads_->enqueue(render_job, last_reg_context + i));
         }
 
         for (const auto &e : events) {
             e.wait();
         }
+
+        cur_spp_ += SPP_PORTION;
+        if (cur_spp_ >= SPP) {
+            last_reg_context_ += num_buckets_;
+            cur_spp_ = 0;
+        }
     } else {
         ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
     }
+
+    if (last_reg_context_ >= (int)region_contexts_.size()) last_reg_context_ = 0;
 
     int w, h;
 
@@ -154,6 +185,40 @@ void GSRayTest::Draw(float dt_s) {
 
 #if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+
+    float pix_row[BUCKET_SIZE][4];
+
+    for (int i = 0; i < num_buckets_; i++) {
+        if (last_reg_context + i >= (int)region_contexts_.size()) break;
+
+        for (int j = 0; j < BUCKET_SIZE; j++) {
+            pix_row[j][0] = color_table_[i * 3 + 0];
+            pix_row[j][1] = color_table_[i * 3 + 1];
+            pix_row[j][2] = color_table_[i * 3 + 2];
+            pix_row[j][3] = 1.0f;
+        }
+
+        const auto &rc = region_contexts_[last_reg_context + i];
+        swBlitPixels(rc.rect().x, rc.rect().y, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+    }
 #endif
 
     auto dt_ms = int(sys::GetTicks() - t1);
@@ -210,7 +275,7 @@ void GSRayTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSRayTest::Update(int dt_ms) {
+void GSRayBucketTest::Update(int dt_ms) {
     using namespace math;
 
     vec3 up = { 0, 1, 0 };
@@ -251,8 +316,8 @@ void GSRayTest::Update(int dt_ms) {
 
 }
 
-void GSRayTest::HandleInput(InputManager::Event evt) {
-    using namespace GSRayTestInternal;
+void GSRayBucketTest::HandleInput(InputManager::Event evt) {
+    using namespace GSRayBucketTestInternal;
     using namespace math;
 
     switch (evt.type) {
