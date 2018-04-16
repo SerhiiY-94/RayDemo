@@ -1,5 +1,7 @@
 #pragma once
 
+#include <future>
+
 #include <engine/GameState.h>
 #include <engine/go/Go.h>
 #include <ren/Camera.h>
@@ -54,19 +56,21 @@ class GSRayBucketTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
-    int num_buckets_;
-
     std::vector<ray::RegionContext> region_contexts_;
+    std::vector<std::future<void>> events_;
+
+    // leads to race condition, but doesnt matter
+    std::vector<bool> is_active_, is_aborted_;
 
     int last_reg_context_ = 0;
     int cur_spp_ = 0;
-
-    std::vector<float> color_table_;
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const math::vec3 &sun_dir);
 public:
     explicit GSRayBucketTest(GameBase *game);
+
+    GSRayBucketTest(const GSRayBucketTest &rhs) = delete;
 
     void Enter() override;
     void Exit() override;

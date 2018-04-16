@@ -25,8 +25,8 @@
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
 const int BUCKET_SIZE = 32;
-const int SPP = 64;
-const int SPP_PORTION = 8;
+const int SPP = 128;
+const int SPP_PORTION = 32;
 }
 
 GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
@@ -45,6 +45,16 @@ GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
 void GSRayBucketTest::UpdateRegionContexts() {
     using namespace GSRayBucketTestInternal;
 
+    for (auto &a : is_aborted_) {
+        a = true;
+    }
+
+    for (const auto &e : events_) {
+        e.wait();
+    }
+
+    is_aborted_.clear();
+    events_.clear();
     region_contexts_.clear();
     last_reg_context_ = 0;
     cur_spp_ = 0;
@@ -65,6 +75,29 @@ void GSRayBucketTest::UpdateRegionContexts() {
     } else {
         auto rect = ray::rect_t{ 0, 0, sz.first, sz.second };
         region_contexts_.emplace_back(rect);
+    }
+
+    is_active_.resize(region_contexts_.size(), false);
+    is_aborted_.resize(region_contexts_.size(), false);
+
+    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+        auto render_job = [this](int i) {
+            if (is_aborted_[i]) return;
+
+            is_active_[i] = true;
+            for (int j = 0; j < SPP_PORTION; j++) {
+                ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]);
+            }
+            is_active_[i] = false;
+        };
+
+        for (int s = 0; s < SPP; s += SPP_PORTION) {
+            for (int i = 0; i < (int)region_contexts_.size(); i++) {
+                events_.push_back(threads_->enqueue(render_job, i));
+            }
+        }
+    } else {
+        //ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
     }
 }
 
@@ -117,20 +150,12 @@ void GSRayBucketTest::Enter() {
     auto num_threads = std::max(1u, std::thread::hardware_concurrency());
     threads_ = std::make_shared<sys::ThreadPool>(num_threads);
 
-    num_buckets_ = (int)num_threads;
-    color_table_.resize(num_buckets_ * 3);
-
-    for (int i = 0; i < num_buckets_; i++) {
-        color_table_[i * 3 + 0] = float(rand())/RAND_MAX;
-        color_table_[i * 3 + 1] = float(rand())/RAND_MAX;
-        color_table_[i * 3 + 2] = float(rand())/RAND_MAX;
-    }
-
     UpdateRegionContexts();
 }
 
 void GSRayBucketTest::Exit() {
-
+    for (auto &a : is_aborted_) a = true;
+    for (const auto &e : events_) e.wait();
 }
 
 void GSRayBucketTest::Draw(float dt_s) {
@@ -150,34 +175,6 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     const auto rt = ray_renderer_->type();
 
-    auto last_reg_context = last_reg_context_;
-
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        auto render_job = [this](int i) { for (int j = 0; j < SPP_PORTION; j++) ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
-        
-        std::vector<std::future<void>> events;
-
-        for (int i = 0; i < num_buckets_; i++) {
-            if (last_reg_context + i >= (int)region_contexts_.size()) break;
-
-            events.push_back(threads_->enqueue(render_job, last_reg_context + i));
-        }
-
-        for (const auto &e : events) {
-            e.wait();
-        }
-
-        cur_spp_ += SPP_PORTION;
-        if (cur_spp_ >= SPP) {
-            last_reg_context_ += num_buckets_;
-            cur_spp_ = 0;
-        }
-    } else {
-        ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
-    }
-
-    if (last_reg_context_ >= (int)region_contexts_.size()) last_reg_context_ = 0;
-
     int w, h;
 
     std::tie(w, h) = ray_renderer_->size();
@@ -188,17 +185,17 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     float pix_row[BUCKET_SIZE][4];
 
-    for (int i = 0; i < num_buckets_; i++) {
-        if (last_reg_context + i >= (int)region_contexts_.size()) break;
+    for (int i = 0; i < (int)region_contexts_.size(); i++) {
+        if (!is_active_[i]) continue;
 
         for (int j = 0; j < BUCKET_SIZE; j++) {
-            pix_row[j][0] = color_table_[i * 3 + 0];
-            pix_row[j][1] = color_table_[i * 3 + 1];
-            pix_row[j][2] = color_table_[i * 3 + 2];
+            pix_row[j][0] = 1.0f;
+            pix_row[j][1] = 1.0f;
+            pix_row[j][2] = 1.0f;
             pix_row[j][3] = 1.0f;
         }
 
-        const auto &rc = region_contexts_[last_reg_context + i];
+        const auto &rc = region_contexts_[i];
         swBlitPixels(rc.rect().x, rc.rect().y, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
         swBlitPixels(rc.rect().x, rc.rect().y + 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
         swBlitPixels(rc.rect().x, rc.rect().y + 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
@@ -231,6 +228,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         time_counter_ = 0;
     }
 
+#if 0
     {
         // ui draw
         ui_renderer_->BeginDraw();
@@ -271,6 +269,7 @@ void GSRayBucketTest::Draw(float dt_s) {
 
         ui_renderer_->EndDraw();
     }
+#endif
 
     ctx_->ProcessTasks();
 }
@@ -392,6 +391,12 @@ void GSRayBucketTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
+        for (auto &a : is_aborted_) a = true;
+        for (const auto &e : events_) e.wait();
+
+        is_aborted_.clear();
+        events_.clear();
+
         ray_renderer_->Resize((int)evt.point.x, (int)evt.point.y);
         UpdateRegionContexts();
         break;
