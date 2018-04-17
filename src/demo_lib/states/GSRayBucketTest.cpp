@@ -24,9 +24,9 @@
 
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
-const int BUCKET_SIZE = 32;
+const int BUCKET_SIZE = 48;
 const int SPP = 128;
-const int SPP_PORTION = 32;
+const int SPP_PORTION = 128;
 }
 
 GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
@@ -40,6 +40,8 @@ GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
     font_ = fonts->FindFont("main_font");
 
     ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
+
+    threads_        = game->GetComponent<sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
 void GSRayBucketTest::UpdateRegionContexts() {
@@ -146,9 +148,6 @@ void GSRayBucketTest::Enter() {
     const auto &cam = ray_scene_->GetCamera(0);
     view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
     view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
-
-    auto num_threads = std::max(1u, std::thread::hardware_concurrency());
-    threads_ = std::make_shared<sys::ThreadPool>(num_threads);
 
     UpdateRegionContexts();
 }
