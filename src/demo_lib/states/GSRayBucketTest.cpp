@@ -25,8 +25,37 @@
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
 const int BUCKET_SIZE = 48;
-const int PASSES = 4;
-const int SPP_PORTION = 16;
+const int PASSES = 1;
+const int SPP_PORTION = 32;
+
+// From wikipedia page about Hilbert curve
+
+void rot(int n, int *x, int *y, int rx, int ry) {
+    if (ry == 0) {
+        if (rx == 1) {
+            *x = n-1 - *x;
+            *y = n-1 - *y;
+        }
+
+        //Swap x and y
+        int t  = *x;
+        *x = *y;
+        *y = t;
+    }
+}
+
+void d2xy(int n, int d, int *x, int *y) {
+    int rx, ry, s, t = d;
+    *x = *y = 0;
+    for (s = 1; s < n; s *= 2) {
+        rx = 1 & (t / 2);
+        ry = 1 & (t ^ rx);
+        rot(s, x, y, rx, ry);
+        *x += s * rx;
+        *y += s * ry;
+        t /= 4;
+    }
+}
 }
 
 GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
@@ -65,7 +94,7 @@ void GSRayBucketTest::UpdateRegionContexts() {
     const auto sz = ray_renderer_->size();
 
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
+        /*for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
                 auto rect = ray::rect_t{ x, y, 
                     std::min(sz.first - x, BUCKET_SIZE),
@@ -73,7 +102,39 @@ void GSRayBucketTest::UpdateRegionContexts() {
 
                 region_contexts_.emplace_back(rect);
             }
+        }*/
+
+        int resx = sz.first / BUCKET_SIZE + (sz.first % BUCKET_SIZE != 0);
+        int resy = sz.second / BUCKET_SIZE + (sz.second % BUCKET_SIZE != 0);
+
+        int res =  std::max(resx, resy);
+
+        // round up to next power of two
+        res--;
+        res |= res >> 1;
+        res |= res >> 2;
+        res |= res >> 4;
+        res |= res >> 8;
+        res |= res >> 16;
+        res++;
+
+        for (int i = 0; i < res * res; i++) {
+            int x, y;
+
+            d2xy(res, i, &x, &y);
+
+            if (x > resx - 1 || y > resy - 1) continue;
+
+            x *= BUCKET_SIZE;
+            y *= BUCKET_SIZE;
+
+            auto rect = ray::rect_t{ x, y,
+                    std::min(sz.first - x, BUCKET_SIZE),
+                    std::min(sz.second - y, BUCKET_SIZE) };
+
+            region_contexts_.emplace_back(rect);
         }
+
     } else {
         auto rect = ray::rect_t{ 0, 0, sz.first, sz.second };
         region_contexts_.emplace_back(rect);
@@ -139,7 +200,7 @@ void GSRayBucketTest::Enter() {
     JsObject js_scene;
 
     {
-        std::ifstream in_file("./assets/scenes/honda.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -249,7 +310,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         *result = dt.count();
 
         auto sm = state_manager_.lock();
-        sm->Pop();
+        sm->PopLater();
     }
 
     auto dt_ms = int(sys::GetTicks() - t1);
