@@ -50,6 +50,11 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
     }
 
     {
+        auto test_result = std::make_shared<double>(0.0);
+        AddComponent(TEST_RESULT_KEY, test_result);
+    }
+
+    {
         // create ray renderer
         auto ray_renderer = ray::CreateRenderer(w, h);
         AddComponent(RAY_RENDERER_KEY, ray_renderer);

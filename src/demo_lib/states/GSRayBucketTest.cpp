@@ -25,8 +25,8 @@
 namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
 const int BUCKET_SIZE = 48;
-const int SPP = 128;
-const int SPP_PORTION = 128;
+const int PASSES = 4;
+const int SPP_PORTION = 16;
 }
 
 GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
@@ -83,19 +83,35 @@ void GSRayBucketTest::UpdateRegionContexts() {
     is_aborted_.resize(region_contexts_.size(), false);
 
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
-        auto render_job = [this](int i) {
+        auto render_job = [this](int i, int m) {
             if (is_aborted_[i]) return;
 
+            {
+                auto t = std::chrono::high_resolution_clock::now();
+
+                std::lock_guard<std::mutex> _(timers_mutex_);
+                if (start_time_ == std::chrono::high_resolution_clock::time_point{}) {
+                    start_time_ = t;
+                }
+            }
+
             is_active_[i] = true;
-            for (int j = 0; j < SPP_PORTION; j++) {
+            for (int j = 0; j < SPP_PORTION * m; j++) {
                 ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]);
             }
             is_active_[i] = false;
+
+            {
+                auto t = std::chrono::high_resolution_clock::now();
+
+                std::lock_guard<std::mutex> _(timers_mutex_);
+                end_time_ = t;
+            }
         };
 
-        for (int s = 0; s < SPP; s += SPP_PORTION) {
+        for (int s = 0; s < PASSES; s++) {
             for (int i = 0; i < (int)region_contexts_.size(); i++) {
-                events_.push_back(threads_->enqueue(render_job, i));
+                events_.push_back(threads_->enqueue(render_job, i, (1 << s)));
             }
         }
     } else {
@@ -123,7 +139,7 @@ void GSRayBucketTest::Enter() {
     JsObject js_scene;
 
     {
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/honda.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -217,6 +233,25 @@ void GSRayBucketTest::Draw(float dt_s) {
     }
 #endif
 
+    bool ready = true;
+
+    for (size_t i = 0; i < events_.size(); i++) {
+        if (events_[i].wait_for(std::chrono::milliseconds(5)) != std::future_status::ready) {
+            ready = false;
+            break;
+        }
+    }
+
+    if (ready) {
+        auto dt = std::chrono::duration<double>{ end_time_ - start_time_ };
+
+        auto result = game_->GetComponent<double>(TEST_RESULT_KEY);
+        *result = dt.count();
+
+        auto sm = state_manager_.lock();
+        sm->Pop();
+    }
+
     auto dt_ms = int(sys::GetTicks() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
@@ -227,7 +262,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         time_counter_ = 0;
     }
 
-#if 0
+#if 1
     {
         // ui draw
         ui_renderer_->BeginDraw();
@@ -255,16 +290,10 @@ void GSRayBucketTest::Draw(float dt_s) {
         stats4 += "pass:  ";
         stats4 += std::to_string(region_contexts_[0].iteration);
 
-        std::string stats5;
-        stats5 += "time:  ";
-        stats5 += std::to_string(cur_time_stat_ms_);
-        stats5 += " ms";
-
         font_->DrawText(ui_renderer_.get(), stats1.c_str(), { -1, 1 - 1 * font_height }, ui_root_.get());
         font_->DrawText(ui_renderer_.get(), stats2.c_str(), { -1, 1 - 2 * font_height }, ui_root_.get());
         font_->DrawText(ui_renderer_.get(), stats3.c_str(), { -1, 1 - 3 * font_height }, ui_root_.get());
         font_->DrawText(ui_renderer_.get(), stats4.c_str(), { -1, 1 - 4 * font_height }, ui_root_.get());
-        font_->DrawText(ui_renderer_.get(), stats5.c_str(), { -1, 1 - 5 * font_height }, ui_root_.get());
 
         ui_renderer_->EndDraw();
     }

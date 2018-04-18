@@ -76,7 +76,7 @@ void GSCPUTest::Enter() {
                 mean_us += deviation * k;
                 
                 std::chrono::duration<double, std::milli> time_since_start = std::chrono::high_resolution_clock::now() - warmup_start;
-                if ((deviation < 1000.0 || time_since_start.count() > 10000.0) && !signaled_ready) {
+                if ((deviation < 1000.0 || time_since_start.count() > 100.0) && !signaled_ready) {
                     ++num_ready_;
                     signaled_ready = true;
                 }
@@ -89,7 +89,7 @@ void GSCPUTest::Enter() {
             threads_->enqueue(warmup_job);
         }
     } else if (state_ == eStarted) {
-        
+        state_ = eFinished;
     }
 }
 
@@ -114,7 +114,10 @@ void GSCPUTest::Draw(float dt_s) {
             sm->Push(GSCreate(GS_RAY_BUCK_TEST, game_));
         }
     } else if (state_ == eStarted) {
-    
+        
+    } else if (state_ == eFinished) {
+        
+
     }
 
 #if 1
@@ -134,6 +137,16 @@ void GSCPUTest::Draw(float dt_s) {
             if (counter_ > 300) counter_ = 0;
         } else if (state_ == eStarted) {
             //font_->DrawText(ui_renderer_.get(), "STARTING", { 0.0f, 0.0f }, ui_root_.get());
+        } else if (state_ == eFinished) {
+            auto result = game_->GetComponent<double>(TEST_RESULT_KEY);
+
+            font_->set_scale(4.0f);
+            std::string text = "RESULT: ";
+            text += std::to_string(*result);
+            text += " s";
+            float len = font_->GetWidth(text.c_str(), ui_root_.get());
+            font_->DrawText(ui_renderer_.get(), text.c_str(), { -0.5f * len, -0.5f * font_->height(ui_root_.get()) }, ui_root_.get());
+            font_->set_scale(1.0f);
         }
 
         float font_height = font_->height(ui_root_.get());

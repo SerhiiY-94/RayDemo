@@ -176,7 +176,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             if (js_vtx_data.val.find(".obj") != std::string::npos) {
                 std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val);
             } else if (js_vtx_data.val.find(".raw") != std::string::npos) {
-
+                std::tie(attrs, indices, groups) = LoadRAW(js_vtx_data.val);
             } else {
                 throw std::runtime_error("unknown mesh type");
             }
@@ -324,23 +324,55 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
     groups.push_back(indices.size() - groups.back());
 
-    return std::make_tuple(attrs, indices, groups);
+#if 1
+    std::string out_file_name = file_name;
+    out_file_name[out_file_name.size() - 3] = 'r';
+    out_file_name[out_file_name.size() - 2] = 'a';
+    out_file_name[out_file_name.size() - 1] = 'w';
+
+    std::ofstream out_file(out_file_name, std::ios::binary);
+
+    uint32_t s;
+
+    s = (uint32_t)attrs.size();
+    out_file.write((char *)&s, sizeof(s));
+
+    s = (uint32_t)indices.size();
+    out_file.write((char *)&s, sizeof(s));
+
+    s = (uint32_t)groups.size();
+    out_file.write((char *)&s, sizeof(s));
+
+    out_file.write((char *)&attrs[0], attrs.size() * sizeof(attrs[0]));
+    out_file.write((char *)&indices[0], indices.size() * sizeof(indices[0]));
+    out_file.write((char *)&groups[0], groups.size() * sizeof(groups[0]));
+#endif
+
+    return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
-std::pair<std::vector<float>, std::vector<unsigned>> LoadRAW(const std::string &file_name) {
+std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadRAW(const std::string &file_name) {
     std::ifstream in_file(file_name, std::ios::binary);
-    uint32_t num_indices;
-    in_file.read((char *)&num_indices, 4);
     uint32_t num_attrs;
     in_file.read((char *)&num_attrs, 4);
-    std::vector<unsigned> indices;
-    indices.resize((size_t)num_indices);
-    in_file.read((char *)&indices[0], (size_t)num_indices * 4);
+    uint32_t num_indices;
+    in_file.read((char *)&num_indices, 4);
+    uint32_t num_groups;
+    in_file.read((char *)&num_groups, 4);
+
     std::vector<float> attrs;
     attrs.resize(num_attrs);
     in_file.read((char *)&attrs[0], (size_t)num_attrs * 4);
 
-    return std::make_pair(attrs, indices);
+    std::vector<unsigned> indices;
+    indices.resize((size_t)num_indices);
+    in_file.read((char *)&indices[0], (size_t)num_indices * 4);
+    
+    std::vector<unsigned> groups;
+    groups.resize((size_t)num_groups);
+    in_file.read((char *)&groups[0], (size_t)num_groups * 4);
+
+    return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
 std::vector<ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h) {

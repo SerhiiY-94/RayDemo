@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <future>
+#include <mutex>
 
 #include <engine/GameState.h>
 #include <engine/go/Go.h>
@@ -64,6 +66,9 @@ class GSRayBucketTest : public GameState {
 
     int last_reg_context_ = 0;
     int cur_spp_ = 0;
+
+    std::mutex timers_mutex_;
+    std::chrono::high_resolution_clock::time_point start_time_, end_time_;
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const math::vec3 &sun_dir);
