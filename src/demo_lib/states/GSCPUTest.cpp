@@ -142,8 +142,7 @@ void GSCPUTest::Draw(float dt_s) {
 
             font_->set_scale(4.0f);
             std::string text = "RESULT: ";
-            text += std::to_string(*result);
-            text += " s";
+            text += std::to_string((unsigned)std::round(1000000.0 / *result));
             float len = font_->GetWidth(text.c_str(), ui_root_.get());
             font_->DrawText(ui_renderer_.get(), text.c_str(), { -0.5f * len, -0.5f * font_->height(ui_root_.get()) }, ui_root_.get());
             font_->set_scale(1.0f);
