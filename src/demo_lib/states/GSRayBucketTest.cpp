@@ -76,8 +76,8 @@ GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
 void GSRayBucketTest::UpdateRegionContexts() {
     using namespace GSRayBucketTestInternal;
 
-    for (auto &a : is_aborted_) {
-        a = true;
+    for (size_t i = 0; i < is_aborted_.size(); i++) {
+        is_aborted_[i] = true;
     }
 
     for (const auto &e : events_) {
@@ -230,7 +230,7 @@ void GSRayBucketTest::Enter() {
 }
 
 void GSRayBucketTest::Exit() {
-    for (auto &a : is_aborted_) a = true;
+    for (size_t i = 0; i < is_aborted_.size(); i++) is_aborted_[i] = true;
     for (const auto &e : events_) e.wait();
 }
 
@@ -480,7 +480,7 @@ void GSRayBucketTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
-        for (auto &a : is_aborted_) a = true;
+        for (size_t i = 0; i < is_aborted_.size(); i++) is_aborted_[i] = true;
         for (const auto &e : events_) e.wait();
 
         is_aborted_.clear();

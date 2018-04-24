@@ -41,12 +41,12 @@ class GSCPUTest : public GameState {
 
     enum { eWarmup, eStarted, eFinished } state_ = eWarmup;
 
-    std::atomic_bool warmup_done_ = false;
-    std::atomic_int num_ready_ = 0;
+    std::atomic_bool warmup_done_ = { false };
+    std::atomic_int num_ready_ = { 0 };
     int counter_ = 0;
 public:
     explicit GSCPUTest(GameBase *game);
-    ~GSCPUTest();
+    ~GSCPUTest() override;
 
     void Enter() override;
     void Exit() override;
