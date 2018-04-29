@@ -5,16 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(SDL_STATIC ON)
 
-include_directories(libs/ocl/include)
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    link_directories(libs/ocl/lib/x86_64)
-else(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    link_directories(libs/ocl/lib/x86)
-endif()
-
 add_definitions(-DCPU_ARCH_SSE2)
-#add_definitions(-DMATH_NO_INLINE)
+add_definitions(-DMATH_NO_INLINE)
 
 set(RENDERER SW)
 
@@ -63,14 +55,14 @@ link_directories(${SDL2_LIBRARIES})
 #set(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 enable_testing()
 
-add_subdirectory(engine)
-add_subdirectory(demo_app)
-add_subdirectory(demo_lib)
 add_subdirectory(math)
 add_subdirectory(ray)
 add_subdirectory(ren)
 add_subdirectory(sys)
 add_subdirectory(ui)
+add_subdirectory(engine)
+add_subdirectory(demo_lib)
+add_subdirectory(demo_app)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
