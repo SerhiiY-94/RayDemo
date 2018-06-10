@@ -54,6 +54,8 @@ class GSRayTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
+    std::vector<ray::RendererBase::stats_t> stats_;
+
     std::vector<ray::RegionContext> region_contexts_;
 
     void UpdateRegionContexts();

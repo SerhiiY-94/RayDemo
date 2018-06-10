@@ -146,6 +146,35 @@ void GSRayTest::Draw(float dt_s) {
         ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
     }
 
+    ray::RendererBase::stats_t st;
+    ray_renderer_->GetStats(st);
+    ray_renderer_->ResetStats();
+
+    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+        st.time_primary_ray_gen_us /= threads_->num_workers();
+        st.time_primary_trace_us /= threads_->num_workers();
+        st.time_primary_shade_us /= threads_->num_workers();
+        st.time_secondary_trace_us /= threads_->num_workers();
+        st.time_secondary_shade_us /= threads_->num_workers();
+    }
+
+    stats_.push_back(st);
+    if (stats_.size() > 128) {
+        stats_.erase(stats_.begin());
+    }
+
+    unsigned long long time_total = 0;
+
+    for (const auto &st : stats_) {
+        unsigned long long _time_total = st.time_primary_ray_gen_us + st.time_primary_trace_us +
+            st.time_primary_shade_us + st.time_secondary_trace_us + st.time_secondary_shade_us;
+        time_total = std::max(time_total, _time_total);
+    }
+
+    if (time_total % 5000 != 0) {
+        time_total += 5000 - (time_total % 5000);
+    }
+
     int w, h;
 
     std::tie(w, h) = ray_renderer_->size();
@@ -153,6 +182,48 @@ void GSRayTest::Draw(float dt_s) {
 
 #if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+
+    uint8_t stat_line[64][3];
+    int off_x = 128 - (int)stats_.size();
+
+    for (const auto &st : stats_) {
+        int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
+        int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        int p2 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        int p3 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_trace_us +
+                                  st.time_secondary_shade_us) / time_total);
+        int p4 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+                                  st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+
+        int l = p4;
+
+        for (int i = 0; i < p0; i++) {
+            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 255;
+        }
+
+        for (int i = p0; i < p1; i++) {
+            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 255;
+        }
+
+        for (int i = p1; i < p2; i++) {
+            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
+        }
+
+        for (int i = p2; i < p3; i++) {
+            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
+        }
+
+        for (int i = p3; i < p4; i++) {
+            stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
+        }
+
+        swBlitPixels(180 + off_x, 4 + (64 - l), SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+        off_x++;
+    }
+
+    uint8_t hor_line[128][3];
+    memset(&hor_line[0][0], 255, sizeof(hor_line));
+    swBlitPixels(180, 4, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
     auto dt_ms = int(sys::GetTicks() - t1);
@@ -202,6 +273,11 @@ void GSRayTest::Draw(float dt_s) {
         font_->DrawText(ui_renderer_.get(), stats3.c_str(), { -1, 1 - 3 * font_height }, ui_root_.get());
         font_->DrawText(ui_renderer_.get(), stats4.c_str(), { -1, 1 - 4 * font_height }, ui_root_.get());
         font_->DrawText(ui_renderer_.get(), stats5.c_str(), { -1, 1 - 5 * font_height }, ui_root_.get());
+
+        std::string stats6 = std::to_string(time_total/1000);
+        stats6 += " ms";
+
+        font_->DrawText(ui_renderer_.get(), stats6.c_str(), { -1 + 2 * 135.0f/w, 1 - 2 * 4.0f/h - font_height }, ui_root_.get());
 
         ui_renderer_->EndDraw();
     }
