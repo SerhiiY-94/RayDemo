@@ -81,7 +81,7 @@ void GSRayTest::Enter() {
 
     JsObject js_scene;
 
-    {
+    { 
         std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
@@ -154,6 +154,7 @@ void GSRayTest::Draw(float dt_s) {
         st.time_primary_ray_gen_us /= threads_->num_workers();
         st.time_primary_trace_us /= threads_->num_workers();
         st.time_primary_shade_us /= threads_->num_workers();
+        st.time_secondary_sort_us /= threads_->num_workers();
         st.time_secondary_trace_us /= threads_->num_workers();
         st.time_secondary_shade_us /= threads_->num_workers();
     }
@@ -167,7 +168,7 @@ void GSRayTest::Draw(float dt_s) {
 
     for (const auto &st : stats_) {
         unsigned long long _time_total = st.time_primary_ray_gen_us + st.time_primary_trace_us +
-            st.time_primary_shade_us + st.time_secondary_trace_us + st.time_secondary_shade_us;
+            st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us;
         time_total = std::max(time_total, _time_total);
     }
 
@@ -189,13 +190,15 @@ void GSRayTest::Draw(float dt_s) {
     for (const auto &st : stats_) {
         int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
         int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p2 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p3 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_trace_us +
+        int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + 
                                   st.time_secondary_shade_us) / time_total);
-        int p4 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+        int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us + 
                                   st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        int p5 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+                                  st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
 
-        int l = p4;
+        int l = p5;
 
         for (int i = 0; i < p0; i++) {
             stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 255;
@@ -206,14 +209,18 @@ void GSRayTest::Draw(float dt_s) {
         }
 
         for (int i = p1; i < p2; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
+            stat_line[i][0] = 255; stat_line[i][1] = 255; stat_line[i][2] = 0;
         }
 
         for (int i = p2; i < p3; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
+            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
         }
 
         for (int i = p3; i < p4; i++) {
+            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
+        }
+
+        for (int i = p4; i < p5; i++) {
             stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
         }
 
