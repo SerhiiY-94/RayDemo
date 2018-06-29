@@ -14,6 +14,8 @@ set(STATES_SOURCES  states/GSCreate.h
 					states/GSCreate.cpp
 					states/GSCPUTest.h
 					states/GSCPUTest.cpp
+					states/GSHybTest.h
+					states/GSHybTest.cpp
 					states/GSRayTest.h
 					states/GSRayTest.cpp
 					states/GSRayBucketTest.h

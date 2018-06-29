@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "GSCPUTest.h"
+#include "GSHybTest.h"
 #include "GSRayTest.h"
 #include "GSRayBucketTest.h"
 #include "GSSamplingTest.h"
@@ -16,6 +17,8 @@ std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game) {
         return std::make_shared<GSSamplingTest>(game);
     } else if (state == GS_CPU_TEST) {
         return std::make_shared<GSCPUTest>(game);
+    } else if (state == GS_HYB_TEST) {
+        return std::make_shared<GSHybTest>(game);
     }
     throw std::invalid_argument("Unknown game state!");
 }
