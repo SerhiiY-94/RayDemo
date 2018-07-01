@@ -37,7 +37,7 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     gpu_tracer_ = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
     if (gpu_tracer_->type() != ray::RendererOCL) throw std::runtime_error("gpu renderer is needed!");
 
-    cpu_tracer_ = ray::CreateRenderer(game->width, game->height, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
+    cpu_tracer_ = ray::CreateRenderer({ game->width, game->height }, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
 
     threads_        = game->GetComponent<sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -87,10 +87,12 @@ void GSHybTest::UpdateEnvironment(const math::vec3 &sun_dir) {
 void GSHybTest::Enter() {
     using namespace math;
 
+    auto platforms = ray::ocl::QueryPlatforms();
+
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/sponza.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
