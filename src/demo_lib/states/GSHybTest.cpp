@@ -21,7 +21,7 @@
 #include "../ui/FontStorage.h"
 
 namespace GSHybTestInternal {
-const float FORWARD_SPEED = 8.0f;
+const float FORWARD_SPEED = 0.5f;
 }
 
 GSHybTest::GSHybTest(GameBase *game) : game_(game) {
@@ -34,9 +34,6 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    gpu_tracer_ = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
-    if (gpu_tracer_->type() != ray::RendererOCL) throw std::runtime_error("gpu renderer is needed!");
-
     cpu_tracer_ = ray::CreateRenderer({ game->width, game->height }, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
 
     threads_        = game->GetComponent<sys::ThreadPool>(THREAD_POOL_KEY);
@@ -46,11 +43,15 @@ void GSHybTest::UpdateRegionContexts() {
     gpu_region_contexts_.clear();
     cpu_region_contexts_.clear();
 
+    if (gpu_cpu_div_fac_ > 0.95f) gpu_cpu_div_fac_ = 0.95f;
+
     const int gpu_start_hor = (int)(ctx_->h() * gpu_cpu_div_fac_);
 
     {   // setup gpu renderers
-        auto rect = ray::rect_t{ 0, 0, ctx_->w(), gpu_start_hor };
-        gpu_region_contexts_.emplace_back(rect);
+        for (int i = 0; i < (int)gpu_tracers_.size(); i++) {
+            auto rect = ray::rect_t{ (int)(ctx_->w() * 0.5f * i), 0, (int)(ctx_->w() * 0.5f), gpu_start_hor };
+            gpu_region_contexts_.emplace_back(rect);
+        }
     }
 
     {   // setup cpu renderers
@@ -87,7 +88,16 @@ void GSHybTest::UpdateEnvironment(const math::vec3 &sun_dir) {
 void GSHybTest::Enter() {
     using namespace math;
 
-    auto platforms = ray::ocl::QueryPlatforms();
+    ocl_platforms_ = ray::ocl::QueryPlatforms();
+
+    for (int pi = 0; pi < (int)ocl_platforms_.size(); pi++) {
+        for (int di = 0; di < (int)ocl_platforms_[pi].devices.size(); di++) {
+            auto gpu_tracer = ray::CreateRenderer({ game_->width, game_->height, pi, di }, ray::RendererOCL);
+            if (gpu_tracer->type() == ray::RendererOCL) {
+                gpu_tracers_.push_back(gpu_tracer);
+            }
+        }
+    }
 
     JsObject js_scene;
 
@@ -99,9 +109,16 @@ void GSHybTest::Enter() {
     }
 
     if (js_scene.Size()) {
-        auto ev = threads_->enqueue([&]() { cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene); });
-        gpu_scene_ = LoadScene(gpu_tracer_.get(), js_scene);
-        ev.wait();
+        std::vector<std::future<void>> events;
+        gpu_scenes_.resize(gpu_tracers_.size());
+        for (size_t i = 0; i < gpu_tracers_.size(); i++) {
+            events.push_back(threads_->enqueue([this, &js_scene](int i) { gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene); }, i));
+        }
+        cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene);
+        
+        for (auto &e : events) {
+            e.wait();
+        }
 
         if (js_scene.Has("camera")) {
             const JsObject &js_cam = js_scene.at("camera");
@@ -116,7 +133,7 @@ void GSHybTest::Enter() {
         }
     }
 
-    const auto &cam = gpu_scene_->GetCamera(0);
+    const auto &cam = cpu_scene_->GetCamera(0);
     view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
     view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
 
@@ -130,25 +147,31 @@ void GSHybTest::Exit() {
 void GSHybTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    gpu_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+    for (auto &s : gpu_scenes_) {
+        s->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+    }
     cpu_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
 
     auto t1 = sys::GetTicks();
 
     if (invalidate_preview_) {
-        gpu_tracer_->Clear();
+        for (auto &t : gpu_tracers_) {
+            t->Clear();
+        }
         cpu_tracer_->Clear();
         UpdateRegionContexts();
         invalidate_preview_ = false;
     }
 
     {   // invoke renderers
-        auto gpu_render_job = [this](int i) { gpu_tracer_->RenderScene(gpu_scene_, gpu_region_contexts_[i]); };
+        auto gpu_render_job = [this](int i) { gpu_tracers_[i]->RenderScene(gpu_scenes_[i], gpu_region_contexts_[i]); };
         auto cpu_render_job = [this](int i) { cpu_tracer_->RenderScene(cpu_scene_, cpu_region_contexts_[i]); };
 
         std::vector<std::future<void>> events;
 
-        events.push_back(threads_->enqueue(gpu_render_job, 0));
+        for (int i = 0; i < (int)gpu_region_contexts_.size(); i++) {
+            events.push_back(threads_->enqueue(gpu_render_job, i));
+        }
 
         for (int i = 0; i < (int)cpu_region_contexts_.size(); i++) {
             events.push_back(threads_->enqueue(cpu_render_job, i));
@@ -173,19 +196,21 @@ void GSHybTest::Draw(float dt_s) {
     }
 
     {
-        ray::RendererBase::stats_t _st;
-        gpu_tracer_->GetStats(_st);
-        gpu_tracer_->ResetStats();
+        for (auto &t : gpu_tracers_) {
+            ray::RendererBase::stats_t _st;
+            t->GetStats(_st);
+            t->ResetStats();
 
-        st.time_primary_ray_gen_us += _st.time_primary_ray_gen_us;
-        st.time_primary_trace_us += _st.time_primary_trace_us;
-        st.time_primary_shade_us += _st.time_primary_shade_us;
-        st.time_secondary_sort_us += _st.time_secondary_sort_us;
-        st.time_secondary_trace_us += _st.time_secondary_trace_us;
-        st.time_secondary_shade_us += _st.time_secondary_shade_us;
+            st.time_primary_ray_gen_us += _st.time_primary_ray_gen_us;
+            st.time_primary_trace_us += _st.time_primary_trace_us;
+            st.time_primary_shade_us += _st.time_primary_shade_us;
+            st.time_secondary_sort_us += _st.time_secondary_sort_us;
+            st.time_secondary_trace_us += _st.time_secondary_trace_us;
+            st.time_secondary_shade_us += _st.time_secondary_shade_us;
 
-        gpu_total = _st.time_primary_ray_gen_us + _st.time_primary_trace_us +
-            _st.time_primary_shade_us + _st.time_secondary_sort_us + _st.time_secondary_trace_us + _st.time_secondary_shade_us;
+            gpu_total = _st.time_primary_ray_gen_us + _st.time_primary_trace_us +
+                _st.time_primary_shade_us + _st.time_secondary_sort_us + _st.time_secondary_trace_us + _st.time_secondary_shade_us;
+        }
     }
 
     //LOGI("%i %i %f", int(cpu_total / 1000), int(gpu_total / 1000), float(cpu_total)/(cpu_total + gpu_total));
@@ -229,14 +254,16 @@ void GSHybTest::Draw(float dt_s) {
     int w, h;
 
     std::tie(w, h) = cpu_tracer_->size();
-    const auto *gpu_pixel_data = gpu_tracer_->get_pixels_ref();
     const auto *cpu_pixel_data = cpu_tracer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
     if (draw_limits_) {
-        for (const auto &r : gpu_region_contexts_) {
+        for (size_t i = 0; i < gpu_region_contexts_.size(); i++) {
+            const auto &r = gpu_region_contexts_[i];
+            const auto *gpu_pixel_data = gpu_tracers_[i]->get_pixels_ref();
+
             const auto rect = r.rect();
-            for (int j = rect.y; j < rect.y + rect.h; j++) {
+            /*for (int j = rect.y; j < rect.y + rect.h; j++) {
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 1] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
             }
@@ -244,10 +271,12 @@ void GSHybTest::Draw(float dt_s) {
             for (int j = rect.x; j < rect.x + rect.w; j++) {
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[rect.y * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-            }
+            }*/
+
+            swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, rect.h, (const void *)gpu_pixel_data, 1);
         }
     }
-    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, gpu_region_contexts_[0].rect().h, (const void *)gpu_pixel_data, 1);
+    
     const int gpu_h = gpu_region_contexts_[0].rect().h;
 
     if (draw_limits_) {
@@ -330,23 +359,23 @@ void GSHybTest::Draw(float dt_s) {
         ui_renderer_->BeginDraw();
 
         ray::RendererBase::stats_t st = {};
-        gpu_tracer_->GetStats(st);
+        gpu_tracers_[0]->GetStats(st);
 
         float font_height = font_->height(ui_root_.get());
 
         std::string stats1;
         stats1 += "res:   ";
-        stats1 += std::to_string(gpu_tracer_->size().first);
+        stats1 += std::to_string(gpu_tracers_[0]->size().first);
         stats1 += "x";
-        stats1 += std::to_string(gpu_tracer_->size().second);
+        stats1 += std::to_string(gpu_tracers_[0]->size().second);
 
         std::string stats2;
         stats2 += "tris:  ";
-        stats2 += std::to_string(gpu_scene_->triangle_count());
+        stats2 += std::to_string(cpu_scene_->triangle_count());
 
         std::string stats3;
         stats3 += "nodes: ";
-        stats3 += std::to_string(gpu_scene_->node_count());
+        stats3 += std::to_string(cpu_scene_->node_count());
 
         std::string stats4;
         stats4 += "pass:  ";
@@ -406,7 +435,7 @@ void GSHybTest::Update(int dt_ms) {
         tr = math::translate(tr, math::vec3{ 0, math::sin(math::radians(angle)) * 200.0f, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
-        gpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
+        //gpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
         cpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
     }
     //_L = math::normalize(_L);
@@ -495,7 +524,9 @@ void GSHybTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_RESIZE:
-        gpu_tracer_->Resize((int)evt.point.x, (int)evt.point.y);
+        for (auto &t : gpu_tracers_) {
+            t->Resize((int)evt.point.x, (int)evt.point.y);
+        }
         cpu_tracer_->Resize((int)evt.point.x, (int)evt.point.y);
         UpdateRegionContexts();
         break;

@@ -8,6 +8,8 @@
 
 #include <ray/RendererBase.h>
 
+#include <math/math.hpp>
+
 class GameBase;
 class GameStateManager;
 class FontStorage;
@@ -31,8 +33,8 @@ class GSHybTest : public GameState {
     std::shared_ptr<ui::BaseElement> ui_root_;
     std::shared_ptr<ui::BitmapFont> font_;
 
-    std::shared_ptr<ray::RendererBase> gpu_tracer_;
-    std::shared_ptr<ray::SceneBase> gpu_scene_;
+    std::vector<std::shared_ptr<ray::RendererBase>> gpu_tracers_;
+    std::vector<std::shared_ptr<ray::SceneBase>> gpu_scenes_;
 
     std::shared_ptr<ray::RendererBase> cpu_tracer_;
     std::shared_ptr<ray::SceneBase> cpu_scene_;
@@ -63,6 +65,8 @@ class GSHybTest : public GameState {
     bool gpu_cpu_div_fac_dirty_ = false;
 
     bool draw_limits_ = true;
+
+    std::vector<ray::ocl::Platform> ocl_platforms_;
 
     std::vector<ray::RegionContext> gpu_region_contexts_;
     std::vector<ray::RegionContext> cpu_region_contexts_;
