@@ -34,7 +34,10 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    cpu_tracer_ = ray::CreateRenderer({ game->width, game->height }, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
+    ray::settings_t s;
+    s.w = game->width;
+    s.h = game->height;
+    cpu_tracer_ = ray::CreateRenderer(s, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
 
     threads_        = game->GetComponent<sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -92,7 +95,12 @@ void GSHybTest::Enter() {
 
     for (int pi = 0; pi < (int)ocl_platforms_.size(); pi++) {
         for (int di = 0; di < (int)ocl_platforms_[pi].devices.size(); di++) {
-            auto gpu_tracer = ray::CreateRenderer({ game_->width, game_->height, pi, di }, ray::RendererOCL);
+            ray::settings_t s;
+            s.w = game_->width;
+            s.h = game_->height;
+            s.platform_index = pi;
+            s.device_index = di;
+            auto gpu_tracer = ray::CreateRenderer(s, ray::RendererOCL);
             if (gpu_tracer->type() == ray::RendererOCL) {
                 gpu_tracers_.push_back(gpu_tracer);
             }
