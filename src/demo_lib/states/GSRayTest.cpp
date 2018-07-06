@@ -79,6 +79,8 @@ void GSRayTest::UpdateEnvironment(const math::vec3 &sun_dir) {
 void GSRayTest::Enter() {
     using namespace math;
 
+    max_fwd_speed_ = GSRayTestInternal::FORWARD_SPEED;
+
     JsObject js_scene;
 
     { 
@@ -104,6 +106,10 @@ void GSRayTest::Enter() {
                 view_target_.x = (float)((const JsNumber &)js_view_target.at(0)).val;
                 view_target_.y = (float)((const JsNumber &)js_view_target.at(1)).val;
                 view_target_.z = (float)((const JsNumber &)js_view_target.at(2)).val;
+            }
+
+            if (js_cam.Has("fwd_speed")) {
+                max_fwd_speed_ = (float)((const JsNumber &)js_cam.at("fwd_speed")).val;
             }
         }
     }
@@ -377,13 +383,13 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {
-            forward_speed_ = FORWARD_SPEED;
+            forward_speed_ = max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_DOWN) {
-            forward_speed_ = -FORWARD_SPEED;
+            forward_speed_ = -max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_LEFT) {
-            side_speed_ = -FORWARD_SPEED;
+            side_speed_ = -max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT) {
-            side_speed_ = FORWARD_SPEED;
+            side_speed_ = max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             animate_ = !animate_;
         } else if (evt.raw_key == 'e' || evt.raw_key == 'q') {

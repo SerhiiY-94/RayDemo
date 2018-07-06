@@ -43,6 +43,8 @@ class GSRayTest : public GameState {
                view_dir_ = { -1, 0, 0 },
                view_target_ = { 0, 0, 0 };
 
+    float max_fwd_speed_;
+
     math::vec3 sun_dir_ = { 0, 1, 0 };
 
     bool invalidate_preview_ = true;
