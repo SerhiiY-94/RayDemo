@@ -20,7 +20,7 @@
 #include "../ui/FontStorage.h"
 
 namespace GSRayTestInternal {
-const float FORWARD_SPEED = 0.5f;
+const float FORWARD_SPEED = 0.1f;
 }
 
 GSRayTest::GSRayTest(GameBase *game) : game_(game) {
@@ -82,14 +82,18 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/rect.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
     }
 
     if (js_scene.Size()) {
-        ray_scene_ = LoadScene(ray_renderer_.get(), js_scene);
+        try {
+            ray_scene_ = LoadScene(ray_renderer_.get(), js_scene);
+        } catch (std::exception &e) {
+            LOGE("%s", e.what());
+        }
 
         if (js_scene.Has("camera")) {
             const JsObject &js_cam = js_scene.at("camera");
@@ -364,6 +368,9 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
                 view_origin_ = view_target_ + dir;
                 view_dir_ = normalize(-dir);
             }
+
+            LOGI("%f %f %f", view_origin_.x, view_origin_.y, view_origin_.z);
+            LOGI("%f %f %f", view_dir_.x, view_dir_.y, view_dir_.z);
 
             invalidate_preview_ = true;
         }

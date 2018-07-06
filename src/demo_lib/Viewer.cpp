@@ -59,7 +59,7 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
         ray::settings_t s;
         s.w = w;
         s.h = h;
-        auto ray_renderer = ray::CreateRenderer(s);
+        auto ray_renderer = ray::CreateRenderer(s, ray::RendererRef);
         AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
 
@@ -68,6 +68,6 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
     input_manager->SetConverter(InputManager::RAW_INPUT_P2_MOVE, nullptr);
 
     auto state_manager = GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    state_manager->Push(GSCreate(GS_HYB_TEST, this));
+    state_manager->Push(GSCreate(GS_RAY_TEST, this));
 }
 

@@ -120,7 +120,7 @@ void GSHybTest::Enter() {
         std::vector<std::future<void>> events;
         gpu_scenes_.resize(gpu_tracers_.size());
         for (size_t i = 0; i < gpu_tracers_.size(); i++) {
-            events.push_back(threads_->enqueue([this, &js_scene](int i) { gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene); }, i));
+            events.push_back(threads_->enqueue([this, &js_scene](size_t i) { gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene); }, i));
         }
         cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene);
         

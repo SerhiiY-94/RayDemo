@@ -22,7 +22,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
     std::map<std::string, uint32_t> materials;
     std::map<std::string, uint32_t> meshes;
 
-    auto get_texture = [&](const std::string &name) {
+    auto get_texture = [&](const std::string &name, bool gen_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
             int w, h;
@@ -33,6 +33,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             tex_desc.data = &data[0];
             tex_desc.w = w;
             tex_desc.h = h;
+            tex_desc.generate_mipmaps = gen_mipmaps;
 
             uint32_t tex_id = new_scene->AddTexture(tex_desc);
             textures[name] = tex_id;
@@ -101,7 +102,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsString &js_type = js_mat_obj.at("type");
 
             const JsString &js_main_tex = js_mat_obj.at("main_texture");
-            mat_desc.main_texture = get_texture(js_main_tex.val);
+            mat_desc.main_texture = get_texture(js_main_tex.val, js_type.val != "mix");
 
             if (js_mat_obj.Has("main_color")) {
                 const JsArray &js_main_color = js_mat_obj.at("main_color");
@@ -112,7 +113,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
 
             if (js_mat_obj.Has("normal_map")) {
                 const JsString &js_normal_map = js_mat_obj.at("normal_map");
-                mat_desc.normal_map = get_texture(js_normal_map.val);
+                mat_desc.normal_map = get_texture(js_normal_map.val, false);
             }
 
             if (js_mat_obj.Has("roughness")) {
