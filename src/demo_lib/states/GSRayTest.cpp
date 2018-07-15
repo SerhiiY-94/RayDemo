@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #if defined(USE_SW_RENDER)
 #include <ren/SW/SW.h>
@@ -20,7 +21,7 @@
 #include "../ui/FontStorage.h"
 
 namespace GSRayTestInternal {
-const float FORWARD_SPEED = 0.1f;
+const float FORWARD_SPEED = 1.0f;
 }
 
 GSRayTest::GSRayTest(GameBase *game) : game_(game) {
@@ -84,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/rect.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/new_scene2.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -119,6 +120,29 @@ void GSRayTest::Enter() {
     view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
 
     UpdateRegionContexts();
+
+    int w, h;
+    auto pixels = LoadTGA("C:\\Users\\MA\\Documents\\untitled.tga", w, h);
+
+    {
+        std::ofstream out_file("test_img1.h", std::ios::binary);
+        out_file << "static const int img_w = " << w << ";\n";
+        out_file << "static const int img_h = " << h << ";\n";
+
+        out_file << "static const uint8_t img_data[] = {\n\t";
+
+        out_file << std::hex << std::setw(2) << std::setfill('0');
+
+        for (size_t i = 0; i < pixels.size(); i++) {
+            out_file << "0x" << std::setw(2) << (int)(pixels[i].r) << ", ";
+            out_file << "0x" << std::setw(2) << (int)(pixels[i].g) << ", ";
+            out_file << "0x" << std::setw(2) << (int)(pixels[i].b) << ", ";
+            out_file << "0x" << std::setw(2) << (int)(pixels[i].a) << ", ";
+            //if (i % 64 == 0 && i != 0) out_file << "\n\t";
+        }
+
+        out_file << "\n};\n";
+    }
 }
 
 void GSRayTest::Exit() {
@@ -128,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 1.0f);
 
     auto t1 = sys::GetTicks();
 

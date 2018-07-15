@@ -239,7 +239,7 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+    ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
 
     auto t1 = sys::GetTicks();
 

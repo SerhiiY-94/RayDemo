@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
 #include <map>
 #include <sstream>
 
@@ -226,7 +227,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
-    new_scene->AddCamera(ray::Persp, math::value_ptr(view_origin), math::value_ptr(view_dir), 45.0f);
+    new_scene->AddCamera(ray::Persp, math::value_ptr(view_origin), math::value_ptr(view_dir), 45.0f, 2.2f);
 
     return new_scene;
 }
@@ -326,27 +327,65 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     groups.push_back(indices.size() - groups.back());
 
 #if 1
-    std::string out_file_name = file_name;
-    out_file_name[out_file_name.size() - 3] = 'r';
-    out_file_name[out_file_name.size() - 2] = 'a';
-    out_file_name[out_file_name.size() - 1] = 'w';
+    {
+        std::string out_file_name = file_name;
+        out_file_name[out_file_name.size() - 3] = 'r';
+        out_file_name[out_file_name.size() - 2] = 'a';
+        out_file_name[out_file_name.size() - 1] = 'w';
 
-    std::ofstream out_file(out_file_name, std::ios::binary);
+        std::ofstream out_file(out_file_name, std::ios::binary);
 
-    uint32_t s;
+        uint32_t s;
 
-    s = (uint32_t)attrs.size();
-    out_file.write((char *)&s, sizeof(s));
+        s = (uint32_t)attrs.size();
+        out_file.write((char *)&s, sizeof(s));
 
-    s = (uint32_t)indices.size();
-    out_file.write((char *)&s, sizeof(s));
+        s = (uint32_t)indices.size();
+        out_file.write((char *)&s, sizeof(s));
 
-    s = (uint32_t)groups.size();
-    out_file.write((char *)&s, sizeof(s));
+        s = (uint32_t)groups.size();
+        out_file.write((char *)&s, sizeof(s));
 
-    out_file.write((char *)&attrs[0], attrs.size() * sizeof(attrs[0]));
-    out_file.write((char *)&indices[0], indices.size() * sizeof(indices[0]));
-    out_file.write((char *)&groups[0], groups.size() * sizeof(groups[0]));
+        out_file.write((char *)&attrs[0], attrs.size() * sizeof(attrs[0]));
+        out_file.write((char *)&indices[0], indices.size() * sizeof(indices[0]));
+        out_file.write((char *)&groups[0], groups.size() * sizeof(groups[0]));
+    }
+#endif
+
+#if 1
+    {
+        std::string out_file_name = file_name;
+        out_file_name[out_file_name.size() - 3] = 'h';
+        out_file_name[out_file_name.size() - 2] = '\0';
+        out_file_name[out_file_name.size() - 1] = '\0';
+
+        std::ofstream out_file(out_file_name, std::ios::binary);
+        out_file << std::setprecision(16) << std::fixed;
+
+        out_file << "static float attrs[] = {\n\t";
+        for (size_t i = 0; i < attrs.size(); i++) {
+            out_file << attrs[i] << "f, ";
+            if (i % 10 == 0 && i != 0) out_file << "\n\t";
+        }
+        out_file << "\n};\n";
+        out_file << "static size_t attrs_count = " << attrs.size() << ";\n\n";
+
+        out_file << "static uint32_t indices[] = {\n\t";
+        for (size_t i = 0; i < indices.size(); i++) {
+            out_file << indices[i] << ", ";
+            if (i % 10 == 0 && i != 0) out_file << "\n\t";
+        }
+        out_file << "\n};\n";
+        out_file << "static size_t indices_count = " << indices.size() << ";\n\n";
+
+        out_file << "static uint32_t groups[] = {\n\t";
+        for (size_t i = 0; i < groups.size(); i++) {
+            out_file << groups[i] << ", ";
+            if (i % 10 == 0 && i != 0) out_file << "\n\t";
+        }
+        out_file << "\n};\n";
+        out_file << "static size_t groups_count = " << groups.size() << ";\n\n";
+    }
 #endif
 
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));

@@ -156,9 +156,9 @@ void GSHybTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     for (auto &s : gpu_scenes_) {
-        s->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+        s->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
     }
-    cpu_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 0);
+    cpu_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
 
     auto t1 = sys::GetTicks();
 
