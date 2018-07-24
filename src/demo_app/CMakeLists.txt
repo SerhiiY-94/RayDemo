@@ -29,9 +29,9 @@ list(APPEND ALL_SOURCE_FILES ${SOURCE_FILES})
 source_group("src" FILES ${SOURCE_FILES})
 
 add_executable(demo_app ${ALL_SOURCE_FILES})
-target_link_libraries(demo_app engine ${LIBS})
+target_link_libraries(demo_app Eng math ${LIBS})
 
-add_dependencies(demo_app demo_lib sys)
+add_dependencies(demo_app demo_lib Sys)
 
 add_custom_command(TARGET demo_app 
                    POST_BUILD

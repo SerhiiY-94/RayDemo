@@ -17,11 +17,11 @@
 #include <SDL2/SDL_video.h>
 #endif
 
-#include <engine/GameBase.h>
-#include <engine/TimedInput.h>
+#include <Eng/GameBase.h>
+#include <Eng/TimedInput.h>
 #include <math/math.hpp>
-#include <sys/Log.h>
-#include <sys/Time_.h>
+#include <Sys/Log.h>
+#include <Sys/Time_.h>
 
 #include <SDL2/SDL_events.h>
 
@@ -314,7 +314,7 @@ void DemoApp::PollEvents() {
             return;
         }
         if (evt.type != InputManager::RAW_INPUT_NONE) {
-            evt.time_stamp = sys::GetTicks() - (SDL_GetTicks() - e.common.timestamp);
+            evt.time_stamp = Sys::GetTicks() - (SDL_GetTicks() - e.common.timestamp);
             input_manager->AddRawInputEvent(evt);
         }
     }
@@ -335,7 +335,7 @@ void DemoApp::LoadLib(int w, int h) {
     GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 
     system("copy \"demo_lib.dll\" \"demo_lib_.dll\"");
-    demo_lib_ = sys::DynLib{ "demo_lib_.dll" };
+    demo_lib_ = Sys::DynLib{ "demo_lib_.dll" };
 #else
     GameBase * ( *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 

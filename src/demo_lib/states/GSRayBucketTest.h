@@ -4,11 +4,11 @@
 #include <future>
 #include <mutex>
 
-#include <engine/GameState.h>
-#include <engine/go/Go.h>
-#include <ren/Camera.h>
-#include <ren/Program.h>
-#include <ren/Texture.h>
+#include <Eng/GameState.h>
+#include <Eng/go/Go.h>
+#include <Ren/Camera.h>
+#include <Ren/Program.h>
+#include <Ren/Texture.h>
 
 #include <ray/RendererBase.h>
 
@@ -16,11 +16,11 @@ class GameBase;
 class GameStateManager;
 class FontStorage;
 
-namespace sys {
+namespace Sys {
 class ThreadPool;
 }
 
-namespace ui {
+namespace Gui {
 class BaseElement;
 class BitmapFont;
 class Renderer;
@@ -29,16 +29,16 @@ class Renderer;
 class GSRayBucketTest : public GameState {
     GameBase *game_;
     std::weak_ptr<GameStateManager> state_manager_;
-    std::shared_ptr<ren::Context> ctx_;
+    std::shared_ptr<Ren::Context> ctx_;
 
-    std::shared_ptr<ui::Renderer> ui_renderer_;
-    std::shared_ptr<ui::BaseElement> ui_root_;
-    std::shared_ptr<ui::BitmapFont> font_;
+    std::shared_ptr<Gui::Renderer> ui_renderer_;
+    std::shared_ptr<Gui::BaseElement> ui_root_;
+    std::shared_ptr<Gui::BitmapFont> font_;
 
     std::shared_ptr<ray::RendererBase> ray_renderer_;
     std::shared_ptr<ray::SceneBase> ray_scene_;
 
-    std::shared_ptr<sys::ThreadPool> threads_;
+    std::shared_ptr<Sys::ThreadPool> threads_;
 
     bool animate_ = false;
     bool view_grabbed_ = false;

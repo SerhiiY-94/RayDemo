@@ -2,25 +2,23 @@
 
 #include <sstream>
 
-#include <engine/GameStateManager.h>
+#include <Eng/GameStateManager.h>
 #include <ray/RendererFactory.h>
-#include <ren/Context.h>
-#include <sys/AssetFile.h>
-#include <sys/Json.h>
+#include <Ren/Context.h>
+#include <Sys/AssetFile.h>
+#include <Sys/Json.h>
 
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
 Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) {
-    using namespace math;
-
-    auto ctx = GetComponent<ren::Context>(REN_CONTEXT_KEY);
+    auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
     JsObject main_config;
 
     {
         // load config
-        sys::AssetFile config_file("assets/config.json", sys::AssetFile::IN);
+        Sys::AssetFile config_file("assets/config.json", Sys::AssetFile::IN);
         size_t config_file_size = config_file.size();
         std::unique_ptr<char[]> buf(new char[config_file_size]);
         config_file.Read(buf.get(), config_file_size);

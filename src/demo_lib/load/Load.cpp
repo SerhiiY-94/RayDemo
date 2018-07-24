@@ -429,16 +429,16 @@ std::vector<ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h
         std::vector<char> in_file_data(in_file_size);
         in_file.read(&in_file_data[0], in_file_size);
 
-        ren::eTex2DFormat format;
-        auto pixels = ren::ReadTGAFile(&in_file_data[0], w, h, format);
+        Ren::eTex2DFormat format;
+        auto pixels = Ren::ReadTGAFile(&in_file_data[0], w, h, format);
 
-        if (format == ren::RawRGB888) {
+        if (format == Ren::RawRGB888) {
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
                     tex_data.push_back({ pixels[3 * (y * w + x)], pixels[3 * (y * w + x) + 1], pixels[3 * (y * w + x) + 2], 255 });
                 }
             }
-        } else if (format == ren::RawRGBA8888) {
+        } else if (format == Ren::RawRGBA8888) {
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
                     tex_data.push_back({ pixels[4 * (y * w + x)], pixels[4 * (y * w + x) + 1], pixels[4 * (y * w + x) + 2], pixels[4 * (y * w + x) + 3] });

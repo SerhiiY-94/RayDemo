@@ -4,19 +4,19 @@
 #include <sstream>
 
 #if defined(USE_SW_RENDER)
-#include <ren/SW/SW.h>
-#include <ren/SW/SWframebuffer.h>
+#include <Ren/SW/SW.h>
+#include <Ren/SW/SWframebuffer.h>
 #endif
 
-#include <engine/GameStateManager.h>
-#include <ren/Context.h>
-#include <ren/Utils.h>
-#include <sys/AssetFile.h>
-#include <sys/Json.h>
-#include <sys/Log.h>
-#include <sys/Time_.h>
-#include <sys/ThreadPool.h>
-#include <ui/Renderer.h>
+#include <Eng/GameStateManager.h>
+#include <Ren/Context.h>
+#include <Ren/Utils.h>
+#include <Sys/AssetFile.h>
+#include <Sys/Json.h>
+#include <Sys/Log.h>
+#include <Sys/Time_.h>
+#include <Sys/ThreadPool.h>
+#include <Gui/Renderer.h>
 
 #include "../Viewer.h"
 #include "../load/Load.h"
@@ -60,17 +60,17 @@ void d2xy(int n, int d, int *x, int *y) {
 
 GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
     state_manager_  = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_            = game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
+    ctx_            = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
-    ui_renderer_    = game->GetComponent<ui::Renderer>(UI_RENDERER_KEY);
-    ui_root_        = game->GetComponent<ui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_    = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
+    ui_root_        = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
 
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
     ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
 
-    threads_        = game->GetComponent<sys::ThreadPool>(THREAD_POOL_KEY);
+    threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
 void GSRayBucketTest::UpdateRegionContexts() {
@@ -241,7 +241,7 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     ray_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
 
-    auto t1 = sys::GetTicks();
+    auto t1 = Sys::GetTicks();
 
     if (invalidate_preview_) {
         ray_renderer_->Clear();
@@ -313,7 +313,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         sm->PopLater();
     }
 
-    auto dt_ms = int(sys::GetTicks() - t1);
+    auto dt_ms = int(Sys::GetTicks() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 

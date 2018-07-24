@@ -6,12 +6,12 @@
 #include <ren/SW/SW.h>
 #endif
 
-#include <engine/GameStateManager.h>
-#include <engine/Random.h>
-#include <ren/Context.h>
-#include <sys/Json.h>
-#include <sys/Log.h>
-#include <ui/Renderer.h>
+#include <Eng/GameStateManager.h>
+#include <Eng/Random.h>
+#include <Ren/Context.h>
+#include <Sys/Json.h>
+#include <Sys/Log.h>
+#include <Gui/Renderer.h>
 
 #include <ray/internal/Core.h>
 #include <ray/internal/Halton.h>
@@ -29,13 +29,13 @@ std::vector<uint16_t> radical_inv_perms;
 
 GSSamplingTest::GSSamplingTest(GameBase *game) : game_(game) {
     state_manager_	= game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    ctx_			= game->GetComponent<ren::Context>(REN_CONTEXT_KEY);
+    ctx_			= game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
     renderer_		= game->GetComponent<Renderer>(RENDERER_KEY);
 
     random_         = game->GetComponent<Random>(RANDOM_KEY);
 
-    ui_renderer_ = game->GetComponent<ui::Renderer>(UI_RENDERER_KEY);
-    ui_root_ = game->GetComponent<ui::BaseElement>(UI_ROOT_KEY);
+    ui_renderer_ = game->GetComponent<Gui::Renderer>(UI_RENDERER_KEY);
+    ui_root_ = game->GetComponent<Gui::BaseElement>(UI_ROOT_KEY);
 
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
