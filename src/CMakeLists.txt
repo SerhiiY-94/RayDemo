@@ -55,22 +55,20 @@ link_directories(${SDL2_LIBRARIES})
 #set(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 enable_testing()
 
-add_subdirectory(math)
 add_subdirectory(ray)
 add_subdirectory(Ren)
 add_subdirectory(Sys)
 add_subdirectory(Gui)
 add_subdirectory(Eng)
-add_subdirectory(demo_lib)
-add_subdirectory(demo_app)
+add_subdirectory(DemoLib)
+add_subdirectory(DemoApp)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set_target_properties(demo_app
-                      demo_lib PROPERTIES FOLDER App)
+set_target_properties(DemoApp
+                      DemoLib PROPERTIES FOLDER App)
 
 set_target_properties(Eng
-                      math
                       ray
                       Ren
                       SW
@@ -78,7 +76,6 @@ set_target_properties(Eng
                       Gui PROPERTIES FOLDER Libs)
 
 set_target_properties(test_Eng
-                      test_math
                       test_ray
                       test_Ren
                       test_SW
@@ -86,7 +83,6 @@ set_target_properties(test_Eng
                       test_Gui PROPERTIES FOLDER Tests)
 
 add_test(EngTest     	Eng/tests/test_Eng)
-add_test(MathTest       math/tests/test_math)
 add_test(RayTest        ray/tests/test_ray)
 add_test(RenTest        Ren/tests/test_Ren)
 add_test(SWTest         Ren/SW/tests/test_SW)
@@ -94,7 +90,6 @@ add_test(SysTest        Sys/tests/test_Sys)
 add_test(GuiTest        Gui/tests/test_Gui)
 
 add_custom_target(Check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_Eng
-                                                               test_math
                                                                test_ray
                                                                test_Ren
                                                                test_SW

@@ -4,9 +4,9 @@
 
 #include <Eng/GameState.h>
 #include <Eng/go/Go.h>
-#include <ren/Camera.h>
-#include <ren/Program.h>
-#include <ren/Texture.h>
+#include <Ren/Camera.h>
+#include <Ren/Program.h>
+#include <Ren/Texture.h>
 
 class GameBase;
 class GameStateManager;

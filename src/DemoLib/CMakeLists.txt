@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(demo_lib)
+project(DemoLib)
 
 add_definitions(-DBUILDING_DLL)
 
@@ -51,12 +51,12 @@ source_group("src\\ui" FILES ${UI_SOURCES})
 list(APPEND ALL_SOURCE_FILES states/_states.cpp)
 source_group("src\\states" FILES states/_states.cpp)
 
-add_library(demo_lib SHARED ${ALL_SOURCE_FILES})
-target_link_libraries(demo_lib Eng math ray Ren Sys ${LIBS})
+add_library(DemoLib SHARED ${ALL_SOURCE_FILES})
+target_link_libraries(DemoLib Eng ray Ren Sys ${LIBS})
 
 # dot not prefix dll with 'lib' in MinGW
-set_target_properties(demo_lib PROPERTIES PREFIX "")
+set_target_properties(DemoLib PROPERTIES PREFIX "")
 
-add_custom_command(TARGET demo_lib
+add_custom_command(TARGET DemoLib
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:demo_lib> ${WORKING_DIRECTORY})
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DemoLib> ${WORKING_DIRECTORY})

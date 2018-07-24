@@ -7,7 +7,7 @@
 
 #include <ray/RendererBase.h>
 #include <ray/Types.h>
-#include <sys/Json.h>
+#include <Sys/Json.h>
 
 std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &js_scene);
 

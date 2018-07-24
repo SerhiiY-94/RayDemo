@@ -3,7 +3,7 @@
 #include <fstream>
 
 #if defined(USE_SW_RENDER)
-#include <ren/SW/SW.h>
+#include <Ren/SW/SW.h>
 #endif
 
 #include <Eng/GameStateManager.h>
@@ -21,7 +21,8 @@
 
 namespace GSSamplingTestInternal {
 float EvalFunc(const float x, const float y, const float xmax, const float ymax) {
-    return 0.5f + 0.5f * std::sin(2.0f * math::pi<float>() * (x / xmax) * std::exp(8.0f * (x / xmax)));
+    const float Pi = 3.14159265358979323846f;
+    return 0.5f + 0.5f * std::sin(2.0f * Pi * (x / xmax) * std::exp(8.0f * (x / xmax)));
 }
 
 std::vector<uint16_t> radical_inv_perms;
@@ -56,7 +57,7 @@ void GSSamplingTest::Exit() {
 }
 
 void GSSamplingTest::Draw(float dt_s) {
-    using namespace math;
+    using namespace Ren;
     using namespace GSSamplingTestInternal;
 
     //renderer_->set_current_cam(&cam_);

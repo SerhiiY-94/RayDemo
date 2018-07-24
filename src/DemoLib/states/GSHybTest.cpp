@@ -4,8 +4,8 @@
 #include <sstream>
 
 #if defined(USE_SW_RENDER)
-#include <ren/SW/SW.h>
-#include <ren/SW/SWframebuffer.h>
+#include <Ren/SW/SW.h>
+#include <Ren/SW/SWframebuffer.h>
 #endif
 
 #include <Eng/GameStateManager.h>
@@ -74,7 +74,7 @@ void GSHybTest::UpdateRegionContexts() {
     gpu_cpu_div_fac_dirty_ = false;
 }
 
-void GSHybTest::UpdateEnvironment(const math::vec3 &sun_dir) {
+void GSHybTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
     /*if (ray_scene_) {
         ray::environment_desc_t env_desc = {};
 
@@ -89,7 +89,7 @@ void GSHybTest::UpdateEnvironment(const math::vec3 &sun_dir) {
 }
 
 void GSHybTest::Enter() {
-    using namespace math;
+    using namespace Ren;
 
     ocl_platforms_ = ray::ocl::QueryPlatforms();
 
@@ -134,9 +134,9 @@ void GSHybTest::Enter() {
                 const JsArray &js_view_target = (const JsArray &)js_cam.at("view_target");
 
                 view_targeted_ = true;
-                view_target_.x = (float)((const JsNumber &)js_view_target.at(0)).val;
-                view_target_.y = (float)((const JsNumber &)js_view_target.at(1)).val;
-                view_target_.z = (float)((const JsNumber &)js_view_target.at(2)).val;
+                view_target_[0] = (float)((const JsNumber &)js_view_target.at(0)).val;
+                view_target_[1] = (float)((const JsNumber &)js_view_target.at(1)).val;
+                view_target_[2] = (float)((const JsNumber &)js_view_target.at(2)).val;
             }
         }
     }
@@ -156,9 +156,9 @@ void GSHybTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     for (auto &s : gpu_scenes_) {
-        s->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
+        s->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f);
     }
-    cpu_scene_->SetCamera(0, ray::Persp, value_ptr(view_origin_), value_ptr(view_dir_), 45.0f, 2.2f);
+    cpu_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f);
 
     auto t1 = Sys::GetTicks();
 
@@ -412,10 +412,12 @@ void GSHybTest::Draw(float dt_s) {
 }
 
 void GSHybTest::Update(int dt_ms) {
-    using namespace math;
+    using namespace Ren;
 
-    vec3 up = { 0, 1, 0 };
-    vec3 side = normalize(cross(view_dir_, up));
+    const float Pi = 3.14159265358979323846f;
+
+    Vec3f up = { 0, 1, 0 };
+    Vec3f side = Normalize(Cross(view_dir_, up));
 
     view_origin_ += view_dir_ * forward_speed_;
     view_origin_ += side * side_speed_;
@@ -439,12 +441,12 @@ void GSHybTest::Update(int dt_ms) {
         static float angle = 0;
         angle += 0.05f * dt_ms;
 
-        math::mat4 tr(1.0f);
-        tr = math::translate(tr, math::vec3{ 0, math::sin(math::radians(angle)) * 200.0f, 0 });
+        Mat4f tr(1.0f);
+        tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 1, 0, 0 });
         //tr = math::rotate(tr, math::radians(angle), math::vec3{ 0, 1, 0 });
         //gpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
-        cpu_scene_->SetMeshInstanceTransform(1, math::value_ptr(tr));
+        cpu_scene_->SetMeshInstanceTransform(1, ValuePtr(tr));
     }
     //_L = math::normalize(_L);
 
@@ -455,7 +457,7 @@ void GSHybTest::Update(int dt_ms) {
 
 void GSHybTest::HandleInput(InputManager::Event evt) {
     using namespace GSHybTestInternal;
-    using namespace math;
+    using namespace Ren;
 
     switch (evt.type) {
     case InputManager::RAW_INPUT_P1_DOWN:
@@ -466,23 +468,23 @@ void GSHybTest::HandleInput(InputManager::Event evt) {
         break;
     case InputManager::RAW_INPUT_P1_MOVE:
         if (view_grabbed_) {
-            vec3 up = { 0, 1, 0 };
-            vec3 side = normalize(cross(view_dir_, up));
-            up = cross(side, view_dir_);
+            Vec3f up = { 0, 1, 0 };
+            Vec3f side = Normalize(Cross(view_dir_, up));
+            up = Cross(side, view_dir_);
 
-            mat4 rot;
-            rot = rotate(rot, 0.01f * evt.move.dx, up);
-            rot = rotate(rot, 0.01f * evt.move.dy, side);
+            Mat4f rot;
+            rot = Rotate(rot, 0.01f * evt.move.dx, up);
+            rot = Rotate(rot, 0.01f * evt.move.dy, side);
 
-            mat3 rot_m3 = mat3(rot);
+            Mat3f rot_m3 = Mat3f(rot);
 
             if (!view_targeted_) {
                 view_dir_ = view_dir_ * rot_m3;
             } else {
-                vec3 dir = view_origin_ - view_target_;
+                Vec3f dir = view_origin_ - view_target_;
                 dir = dir * rot_m3;
                 view_origin_ = view_target_ + dir;
-                view_dir_ = normalize(-dir);
+                view_dir_ = Normalize(-dir);
             }
 
             invalidate_preview_ = true;
@@ -500,15 +502,15 @@ void GSHybTest::HandleInput(InputManager::Event evt) {
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             animate_ = !animate_;
         } else if (evt.raw_key == 'e' || evt.raw_key == 'q') {
-            vec3 up = { 1, 0, 0 };
-            vec3 side = normalize(cross(sun_dir_, up));
-            up = cross(side, sun_dir_);
+            Vec3f up = { 1, 0, 0 };
+            Vec3f side = Normalize(Cross(sun_dir_, up));
+            up = Cross(side, sun_dir_);
 
-            mat4 rot;
-            rot = rotate(rot, evt.raw_key == 'e' ? 0.025f : -0.025f, up);
-            rot = rotate(rot, evt.raw_key == 'e' ? 0.025f : -0.025f, side);
+            Mat4f rot;
+            rot = Rotate(rot, evt.raw_key == 'e' ? 0.025f : -0.025f, up);
+            rot = Rotate(rot, evt.raw_key == 'e' ? 0.025f : -0.025f, side);
 
-            mat3 rot_m3 = mat3(rot);
+            Mat3f rot_m3 = Mat3f(rot);
 
             sun_dir_ = sun_dir_ * rot_m3;
 

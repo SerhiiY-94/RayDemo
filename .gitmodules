@@ -4,9 +4,6 @@
 [submodule "src/Ren"]
 	path = src/Ren
 	url = https://Apfel1994@bitbucket.org/Apfel1994/ren.git
-[submodule "src/math"]
-	path = src/math
-	url = https://github.com/MrApfel1994/math.git
 [submodule "src/Sys"]
 	path = src/Sys
 	url = https://Apfel1994@bitbucket.org/Apfel1994/sys.git

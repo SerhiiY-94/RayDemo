@@ -8,16 +8,16 @@
 #include <map>
 #include <sstream>
 
-#include <math/math.hpp>
-#include <ren/Texture.h>
-#include <ren/Utils.h>
-#include <sys/AssetFile.h>
-#include <sys/Log.h>
+#include <Ren/MMat.h>
+#include <Ren/Texture.h>
+#include <Ren/Utils.h>
+#include <Sys/AssetFile.h>
+#include <Sys/Log.h>
 
 std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &js_scene) {
     auto new_scene = r->CreateScene();
 
-    math::vec3 view_origin, view_dir = { 0, 0, -1 };
+    Ren::Vec3f view_origin, view_dir = { 0, 0, -1 };
 
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
@@ -50,17 +50,17 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             if (js_cam.Has("view_origin")) {
                 const JsArray &js_view_origin = js_cam.at("view_origin");
 
-                view_origin.x = (float)((const JsNumber &)js_view_origin.at(0)).val;
-                view_origin.y = (float)((const JsNumber &)js_view_origin.at(1)).val;
-                view_origin.z = (float)((const JsNumber &)js_view_origin.at(2)).val;
+                view_origin[0] = (float)((const JsNumber &)js_view_origin.at(0)).val;
+                view_origin[1] = (float)((const JsNumber &)js_view_origin.at(1)).val;
+                view_origin[2] = (float)((const JsNumber &)js_view_origin.at(2)).val;
             }
 
             if (js_cam.Has("view_dir")) {
                 const JsArray &js_view_dir = js_cam.at("view_dir");
 
-                view_dir.x = (float)((const JsNumber &)js_view_dir.at(0)).val;
-                view_dir.y = (float)((const JsNumber &)js_view_dir.at(1)).val;
-                view_dir.z = (float)((const JsNumber &)js_view_dir.at(2)).val;
+                view_dir[0] = (float)((const JsNumber &)js_view_dir.at(0)).val;
+                view_dir[1] = (float)((const JsNumber &)js_view_dir.at(1)).val;
+                view_dir[2] = (float)((const JsNumber &)js_view_dir.at(2)).val;
             }
         }
 
@@ -207,7 +207,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsObject &js_mesh_instance_obj = js_mesh_instance;
             const JsString &js_mesh_name = js_mesh_instance_obj.at("mesh");
 
-            math::mat4 transform;
+            Ren::Mat4f transform;
 
             if (js_mesh_instance_obj.Has("pos")) {
                 const JsArray &js_pos = js_mesh_instance_obj.at("pos");
@@ -216,18 +216,18 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
                 float py = (float)((const JsNumber &)js_pos.at(1)).val;
                 float pz = (float)((const JsNumber &)js_pos.at(2)).val;
 
-                transform = math::translate(transform, { px, py, pz });
+                transform = Ren::Translate(transform, { px, py, pz });
             }
 
             uint32_t mesh_index = meshes.at(js_mesh_name.val);
-            new_scene->AddMeshInstance(mesh_index, math::value_ptr(transform));
+            new_scene->AddMeshInstance(mesh_index, Ren::ValuePtr(transform));
         }
     } catch (std::runtime_error &e) {
         LOGE("Error in parsing json file! %s", e.what());
         return nullptr;
     }
 
-    new_scene->AddCamera(ray::Persp, math::value_ptr(view_origin), math::value_ptr(view_dir), 45.0f, 2.2f);
+    new_scene->AddCamera(ray::Persp, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f);
 
     return new_scene;
 }

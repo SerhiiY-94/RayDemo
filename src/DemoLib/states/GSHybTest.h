@@ -2,13 +2,12 @@
 
 #include <Eng/GameState.h>
 #include <Eng/go/Go.h>
-#include <ren/Camera.h>
-#include <ren/Program.h>
-#include <ren/Texture.h>
+#include <Ren/Camera.h>
+#include <Ren/MVec.h>
+#include <Ren/Program.h>
+#include <Ren/Texture.h>
 
 #include <ray/RendererBase.h>
-
-#include <math/math.hpp>
 
 class GameBase;
 class GameStateManager;
@@ -44,11 +43,11 @@ class GSHybTest : public GameState {
     bool animate_ = false;
     bool view_grabbed_ = false;
     bool view_targeted_ = false;
-    math::vec3 view_origin_ = { 0, 20, 3 },
+    Ren::Vec3f view_origin_ = { 0, 20, 3 },
                view_dir_ = { -1, 0, 0 },
                view_target_ = { 0, 0, 0 };
 
-    math::vec3 sun_dir_ = { 0, 1, 0 };
+    Ren::Vec3f sun_dir_ = { 0, 1, 0 };
 
     bool invalidate_preview_ = true;
 
@@ -72,7 +71,7 @@ class GSHybTest : public GameState {
     std::vector<ray::RegionContext> cpu_region_contexts_;
 
     void UpdateRegionContexts();
-    void UpdateEnvironment(const math::vec3 &sun_dir);
+    void UpdateEnvironment(const Ren::Vec3f &sun_dir);
 public:
     explicit GSHybTest(GameBase *game);
 

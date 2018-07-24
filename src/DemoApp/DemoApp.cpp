@@ -6,7 +6,7 @@
 #endif
 
 #if defined(USE_GL_RENDER)
-#include <ren/GL.h>
+#include <Ren/GL.h>
 #elif defined(USE_SW_RENDER)
 
 #endif
@@ -19,7 +19,6 @@
 
 #include <Eng/GameBase.h>
 #include <Eng/TimedInput.h>
-#include <math/math.hpp>
 #include <Sys/Log.h>
 #include <Sys/Time_.h>
 
@@ -36,7 +35,6 @@ extern "C" {
 }
 
 DemoApp::DemoApp() : quit_(false) {
-    math::init();
     g_app = this;
 }
 
@@ -334,13 +332,13 @@ void DemoApp::LoadLib(int w, int h) {
 #if defined(WIN32)
     GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 
-    system("copy \"demo_lib.dll\" \"demo_lib_.dll\"");
-    demo_lib_ = Sys::DynLib{ "demo_lib_.dll" };
+    system("copy \"DemoLib.dll\" \"DemoLib_.dll\"");
+    demo_lib_ = Sys::DynLib{ "DemoLib_.dll" };
 #else
     GameBase * ( *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 
-    if (system(R"(cp "demo_lib.so" "demo_lib_.so")") == -1) LOGE("system call failed");
-    demo_lib_ = sys::DynLib{ "./demo_lib_.so" };
+    if (system(R"(cp "DemoLib.so" "DemoLib_.so")") == -1) LOGE("system call failed");
+    demo_lib_ = sys::DynLib{ "./DemoLib_.so" };
 #endif
 
     if (demo_lib_) {

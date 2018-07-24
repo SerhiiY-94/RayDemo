@@ -4,7 +4,7 @@
 #include <iostream>
 
 #if defined(USE_SW_RENDER)
-#include <ren/SW/SW.h>
+#include <Ren/SW/SW.h>
 #endif
 
 #include <Eng/GameStateManager.h>
