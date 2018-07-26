@@ -135,10 +135,10 @@ int DemoApp::Run(const std::vector<std::string> &args) {
     const int h = 576;
     //const int w = 640;  const int h = 360;
 #else
-    //const int w = 640;  const int h = 360;
+    const int w = 640;  const int h = 360;
     //const int w = 1024;  const int h = 1024;
     //const int w = 1280; const int h = 720;
-    const int w = 256; const int h = 256;
+    //const int w = 256; const int h = 256;
 #endif
 
     if (Init(w, h) < 0) {
