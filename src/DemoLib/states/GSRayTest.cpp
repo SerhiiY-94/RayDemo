@@ -85,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/inter.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -401,8 +401,8 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
                 view_dir_ = Normalize(-dir);
             }
 
-            LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
         }
