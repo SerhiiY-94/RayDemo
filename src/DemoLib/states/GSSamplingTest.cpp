@@ -196,7 +196,7 @@ void GSSamplingTest::Draw(float dt_s) {
 #endif
 
 #if defined(USE_SW_RENDER)
-    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
+    swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, width, height, &pixels_[0], 1);
 #endif
 
 #if 1

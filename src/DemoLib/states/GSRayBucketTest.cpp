@@ -257,7 +257,7 @@ void GSRayBucketTest::Draw(float dt_s) {
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
-    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+    swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
     float pix_row[BUCKET_SIZE][4];
 
@@ -272,25 +272,25 @@ void GSRayBucketTest::Draw(float dt_s) {
         }
 
         const auto &rc = region_contexts_[i];
-        swBlitPixels(rc.rect().x, rc.rect().y, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y, 0, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 1, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 2, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 3, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + 4, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 1, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 2, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 3, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + 4, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
 
-        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 1, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 2, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 3, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
-        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 4, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1, 0, SW_FLOAT, SW_FRGBA, rc.rect().w, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 1, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 2, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 3, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x, rc.rect().y + BUCKET_SIZE - 1 - 4, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 1, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 2, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 3, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
+        swBlitPixels(rc.rect().x + BUCKET_SIZE - 1, rc.rect().y + BUCKET_SIZE - 1 - 4, 0, SW_FLOAT, SW_FRGBA, 1, 1, (const void *)&pix_row[0][0], 1);
     }
 #endif
 

@@ -85,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/new_scene2.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/inter.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -152,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 1.0f);
+    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f);
 
     auto t1 = Sys::GetTicks();
 
@@ -216,7 +216,7 @@ void GSRayTest::Draw(float dt_s) {
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
-    swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+    swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
     uint8_t stat_line[64][3];
     int off_x = 128 - (int)stats_.size();
@@ -258,13 +258,13 @@ void GSRayTest::Draw(float dt_s) {
             stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
         }
 
-        swBlitPixels(180 + off_x, 4 + (64 - l), SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+        swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
         off_x++;
     }
 
     uint8_t hor_line[128][3];
     memset(&hor_line[0][0], 255, sizeof(hor_line));
-    swBlitPixels(180, 4, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
+    swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
     auto dt_ms = int(Sys::GetTicks() - t1);

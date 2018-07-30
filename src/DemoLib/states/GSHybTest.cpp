@@ -51,8 +51,14 @@ void GSHybTest::UpdateRegionContexts() {
     const int gpu_start_hor = (int)(ctx_->h() * gpu_cpu_div_fac_);
 
     {   // setup gpu renderers
-        for (int i = 0; i < (int)gpu_tracers_.size(); i++) {
-            auto rect = ray::rect_t{ (int)(ctx_->w() * 0.5f * i), 0, (int)(ctx_->w() * 0.5f), gpu_start_hor };
+        if (gpu_tracers_.size() == 2) {
+            auto rect1 = ray::rect_t{ 0, 0, (int)(ctx_->w() * gpu_gpu_div_fac_), gpu_start_hor };
+            gpu_region_contexts_.emplace_back(rect1);
+
+            auto rect2 = ray::rect_t{ (int)(ctx_->w() * gpu_gpu_div_fac_), 0, (int)(ctx_->w() * (1.0f - gpu_gpu_div_fac_)), gpu_start_hor };
+            gpu_region_contexts_.emplace_back(rect2);
+        } else if (gpu_tracers_.size() == 1) {
+            auto rect = ray::rect_t{ 0, 0, ctx_->w(), gpu_start_hor };
             gpu_region_contexts_.emplace_back(rect);
         }
     }
@@ -72,6 +78,7 @@ void GSHybTest::UpdateRegionContexts() {
     }
 
     gpu_cpu_div_fac_dirty_ = false;
+    gpu_gpu_div_dac_dirty_ = false;
 }
 
 void GSHybTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
@@ -110,7 +117,7 @@ void GSHybTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/inter.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -203,6 +210,31 @@ void GSHybTest::Draw(float dt_s) {
         cpu_total /= (threads_->num_workers() - 1);
     }
 
+    if (!gpu_gpu_div_dac_dirty_ && gpu_tracers_.size() == 2) {
+        ray::RendererBase::stats_t st1, st2;
+        gpu_tracers_[0]->GetStats(st1);
+        gpu_tracers_[1]->GetStats(st2);
+
+        unsigned long long time_total1 = st1.time_primary_ray_gen_us + st1.time_primary_trace_us +
+            st1.time_primary_shade_us + st1.time_secondary_sort_us + st1.time_secondary_trace_us + st1.time_secondary_shade_us;
+
+        unsigned long long time_total2 = st2.time_primary_ray_gen_us + st2.time_primary_trace_us +
+            st2.time_primary_shade_us + st2.time_secondary_sort_us + st2.time_secondary_trace_us + st2.time_secondary_shade_us;
+
+        if (time_total2 > time_total1) {
+            gpu_gpu_div_fac_ += 0.02;
+        } else {
+            gpu_gpu_div_fac_ -= 0.02;
+        }
+
+        if (gpu_gpu_div_fac_ < 0.05f) gpu_gpu_div_fac_ = 0.05f;
+        if (gpu_gpu_div_fac_ > 0.95f) gpu_gpu_div_fac_ = 0.95f;
+
+        gpu_gpu_div_dac_dirty_ = true;
+
+        //LOGI("%f %f", 0.001f * time_total1, 0.001f * time_total2);
+    }
+
     {
         for (auto &t : gpu_tracers_) {
             ray::RendererBase::stats_t _st;
@@ -233,7 +265,7 @@ void GSHybTest::Draw(float dt_s) {
         gpu_cpu_div_fac_dirty_ = true;
     }
 
-    LOGI("%f", gpu_cpu_div_fac_);
+    //LOGI("%f", gpu_cpu_div_fac_);
 
     st.time_primary_ray_gen_us /= threads_->num_workers();
     st.time_primary_trace_us /= threads_->num_workers();
@@ -265,30 +297,39 @@ void GSHybTest::Draw(float dt_s) {
     const auto *cpu_pixel_data = cpu_tracer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
-    if (draw_limits_) {
-        for (size_t i = 0; i < gpu_region_contexts_.size(); i++) {
-            const auto &r = gpu_region_contexts_[i];
-            const auto *gpu_pixel_data = gpu_tracers_[i]->get_pixels_ref();
+    for (size_t i = 0; i < gpu_region_contexts_.size(); i++) {
+        const auto &r = gpu_region_contexts_[i];
+        const auto *gpu_pixel_data = gpu_tracers_[i]->get_pixels_ref();
 
-            const auto rect = r.rect();
-            /*for (int j = rect.y; j < rect.y + rect.h; j++) {
+        const auto rect = r.rect();
+
+        if (draw_limits_) {
+            for (int j = rect.y; j < rect.y + rect.h; j++) {
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 1] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 2] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 1] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 2] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 3] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
             }
 
             for (int j = rect.x; j < rect.x + rect.w; j++) {
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[rect.y * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 1) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 2) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
                 const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-            }*/
-
-            swBlitPixels(0, 0, SW_FLOAT, SW_FRGBA, w, rect.h, (const void *)gpu_pixel_data, 1);
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 2) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 3) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+            }
         }
+
+        swBlitPixels(rect.x, rect.y, w, SW_FLOAT, SW_FRGBA, rect.w, rect.h, (const void *)gpu_pixel_data, 1);
     }
     
     const int gpu_h = gpu_region_contexts_[0].rect().h;
 
     if (draw_limits_) {
-        for (const auto &r : cpu_region_contexts_) {
+        /*for (const auto &r : cpu_region_contexts_) {
             const auto rect = r.rect();
             for (int j = rect.y; j < rect.y + rect.h; j++) {
                 const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
@@ -299,9 +340,27 @@ void GSHybTest::Draw(float dt_s) {
                 const_cast<ray::pixel_color_t*>(cpu_pixel_data)[rect.y * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
                 const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
             }
+        }*/
+
+        for (int j = h - gpu_h; j < h; j++) {
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + 1] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + 2] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 1] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 2] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 3] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+        }
+
+        for (int j = 0; j < w; j++) {
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[gpu_h * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 2) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 2) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 3) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
         }
     }
-    swBlitPixels(0, gpu_h, SW_FLOAT, SW_FRGBA, w, h - gpu_h, (const void *)(cpu_pixel_data + w * gpu_h), 1);
+    swBlitPixels(0, gpu_h, 0, SW_FLOAT, SW_FRGBA, w, h - gpu_h, (const void *)(cpu_pixel_data + w * gpu_h), 1);
 
     uint8_t stat_line[64][3];
     int off_x = 128 - (int)stats_.size();
@@ -343,13 +402,13 @@ void GSHybTest::Draw(float dt_s) {
             stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
         }
 
-        swBlitPixels(180 + off_x, 4 + (64 - l), SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+        swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
         off_x++;
     }
 
     uint8_t hor_line[128][3];
     memset(&hor_line[0][0], 255, sizeof(hor_line));
-    swBlitPixels(180, 4, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
+    swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
     auto dt_ms = int(Sys::GetTicks() - t1);

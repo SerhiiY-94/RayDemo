@@ -60,8 +60,9 @@ class GSHybTest : public GameState {
 
     std::vector<ray::RendererBase::stats_t> stats_;
 
+    float gpu_gpu_div_fac_ = 0.5f;
     float gpu_cpu_div_fac_ = 0.85f;
-    bool gpu_cpu_div_fac_dirty_ = false;
+    bool gpu_cpu_div_fac_dirty_ = false, gpu_gpu_div_dac_dirty_ = false;
 
     bool draw_limits_ = true;
 
