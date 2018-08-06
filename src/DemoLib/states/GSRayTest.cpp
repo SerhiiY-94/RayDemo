@@ -152,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 200.0f, 0.25f);
+    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, focal_distance_, 0.25f);
 
     auto t1 = Sys::GetTicks();
 
@@ -406,6 +406,11 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
 
             invalidate_preview_ = true;
         }
+        break;
+    case InputManager::RAW_INPUT_MOUSE_WHEEL:
+        focal_distance_ += evt.move.dy;
+        LOGI("focal distance = %f", focal_distance_);
+        invalidate_preview_ = true;
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {

@@ -288,6 +288,11 @@ void DemoApp::PollEvents() {
             evt.move.dx = (float) e.motion.xrel;
             evt.move.dy = (float) e.motion.yrel;
             break;
+        case SDL_MOUSEWHEEL:
+            evt.type = InputManager::RAW_INPUT_MOUSE_WHEEL;
+            evt.move.dx = (float)e.wheel.x;
+            evt.move.dy = (float)e.wheel.y;
+            break;
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                 evt.type = InputManager::RAW_INPUT_RESIZE;
