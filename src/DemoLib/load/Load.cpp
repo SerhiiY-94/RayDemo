@@ -232,7 +232,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
-    new_scene->AddCamera(ray::Persp, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f);
+    new_scene->AddCamera(ray::Persp, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
 
     return new_scene;
 }

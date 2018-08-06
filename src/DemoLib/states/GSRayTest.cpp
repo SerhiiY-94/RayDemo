@@ -152,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f);
+    ray_scene_->SetCamera(0, ray::Persp, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 200.0f, 0.25f);
 
     auto t1 = Sys::GetTicks();
 
@@ -401,8 +401,8 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
                 view_dir_ = Normalize(-dir);
             }
 
-            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
         }
