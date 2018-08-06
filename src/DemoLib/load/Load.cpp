@@ -199,6 +199,11 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
                 mesh_desc.shapes.push_back({ mat_index, groups[i], groups[i + 1] });
             }
 
+            if (js_mesh_obj.Has("allow_spatial_splits")) {
+                JsLiteral splits = (JsLiteral)js_mesh_obj.at("allow_spatial_splits");
+                mesh_desc.allow_spatial_splits = (splits.val == JS_TRUE);
+            }
+
             meshes[js_mesh_name.val] = new_scene->AddMesh(mesh_desc);
         }
 
