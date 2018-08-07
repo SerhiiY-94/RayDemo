@@ -40,18 +40,17 @@ build:
 
 after_build:
     - cd ..
-    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip demo_app.exe
-    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip demo_lib.dll
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoApp.exe
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoLib.dll
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip assets
     
 test_script:
-    - build\src\engine\tests\%CONFIGURATION%\test_engine
-    - build\src\math\tests\%CONFIGURATION%\test_math
+    - build\src\Eng\tests\%CONFIGURATION%\test_Eng
     - build\src\ray\tests\%CONFIGURATION%\test_ray
-    - build\src\ren\tests\%CONFIGURATION%\test_ren
-    - build\src\ren\SW\tests\%CONFIGURATION%\test_SW
-    - build\src\sys\tests\%CONFIGURATION%\test_sys
-    - build\src\ui\tests\%CONFIGURATION%\test_ui
+    - build\src\Ren\tests\%CONFIGURATION%\test_Ren
+    - build\src\Ren\SW\tests\%CONFIGURATION%\test_SW
+    - build\src\Sys\tests\%CONFIGURATION%\test_Sys
+    - build\src\Gui\tests\%CONFIGURATION%\test_Gui
     
 artifacts:
   - path: demo_app_%APPVEYOR_BUILD_VERSION%.zip
