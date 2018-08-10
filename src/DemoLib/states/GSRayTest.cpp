@@ -152,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, focal_distance_, 0.15f);
+    ray_scene_->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, focal_distance_, 0.0f);
 
     auto t1 = Sys::GetTicks();
 
@@ -183,6 +183,8 @@ void GSRayTest::Draw(float dt_s) {
     ray::RendererBase::stats_t st;
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
+
+    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
 
     if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
         st.time_primary_ray_gen_us /= threads_->num_workers();

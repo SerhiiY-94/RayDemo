@@ -234,6 +234,23 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
 
     new_scene->AddCamera(ray::Persp, ray::Tent, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
 
+    {
+        ray::light_desc_t l_desc;
+        l_desc.position[0] = -500;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = 0;
+        l_desc.radius = 5;
+        l_desc.color[0] = 25.0f;
+        l_desc.color[1] = 25.0f;
+        l_desc.color[2] = 25.0f;
+        new_scene->AddLight(l_desc);
+
+        l_desc.position[0] = 500;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = 0;
+        new_scene->AddLight(l_desc);
+    }
+
     return new_scene;
 }
 
