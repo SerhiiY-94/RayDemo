@@ -70,27 +70,34 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsArray &js_sun_col = js_env.at("sun_col");
             const JsArray &js_sky_col = js_env.at("sky_col");
 
-            ray::environment_desc_t env_desc;
+            {   ray::environment_desc_t env_desc;
 
-            env_desc.sun_dir[0] = (float)((const JsNumber &)js_sun_dir.at(0)).val;
-            env_desc.sun_dir[1] = (float)((const JsNumber &)js_sun_dir.at(1)).val;
-            env_desc.sun_dir[2] = (float)((const JsNumber &)js_sun_dir.at(2)).val;
+                env_desc.sky_col[0] = (float)((const JsNumber &)js_sky_col.at(0)).val;
+                env_desc.sky_col[1] = (float)((const JsNumber &)js_sky_col.at(1)).val;
+                env_desc.sky_col[2] = (float)((const JsNumber &)js_sky_col.at(2)).val;
 
-            env_desc.sun_col[0] = (float)((const JsNumber &)js_sun_col.at(0)).val;
-            env_desc.sun_col[1] = (float)((const JsNumber &)js_sun_col.at(1)).val;
-            env_desc.sun_col[2] = (float)((const JsNumber &)js_sun_col.at(2)).val;
-
-            env_desc.sky_col[0] = (float)((const JsNumber &)js_sky_col.at(0)).val;
-            env_desc.sky_col[1] = (float)((const JsNumber &)js_sky_col.at(1)).val;
-            env_desc.sky_col[2] = (float)((const JsNumber &)js_sky_col.at(2)).val;
-
-            env_desc.sun_softness = 0;
-            if (js_env.Has("sun_softness")) {
-                const JsNumber &js_sun_softness = js_env.at("sun_softness");
-                env_desc.sun_softness = (float)js_sun_softness.val;
+                new_scene->SetEnvironment(env_desc);
             }
 
-            new_scene->SetEnvironment(env_desc);
+            {   ray::light_desc_t sun_desc;
+                sun_desc.type = ray::DirectionalLight;
+
+                sun_desc.direction[0] = (float)((const JsNumber &)js_sun_dir.at(0)).val;
+                sun_desc.direction[1] = (float)((const JsNumber &)js_sun_dir.at(1)).val;
+                sun_desc.direction[2] = (float)((const JsNumber &)js_sun_dir.at(2)).val;
+
+                sun_desc.color[0] = (float)((const JsNumber &)js_sun_col.at(0)).val;
+                sun_desc.color[1] = (float)((const JsNumber &)js_sun_col.at(1)).val;
+                sun_desc.color[2] = (float)((const JsNumber &)js_sun_col.at(2)).val;
+
+                sun_desc.angle = 0.0f;
+                if (js_env.Has("sun_softness")) {
+                    const JsNumber &js_sun_softness = js_env.at("sun_softness");
+                    sun_desc.angle = (float)js_sun_softness.val;
+                }
+
+                new_scene->AddLight(sun_desc);
+            }
         }
 
         const JsObject &js_materials = js_scene.at("materials");
@@ -235,20 +242,71 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
     new_scene->AddCamera(ray::Persp, ray::Tent, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
 
     {
-        ray::light_desc_t l_desc;
+        /*ray::light_desc_t l_desc;
+        l_desc.type = ray::PointLight;
         l_desc.position[0] = -500;
         l_desc.position[1] = 50;
-        l_desc.position[2] = 0;
+        l_desc.position[2] = 100;
         l_desc.radius = 5;
-        l_desc.color[0] = 25.0f;
-        l_desc.color[1] = 25.0f;
-        l_desc.color[2] = 25.0f;
+        l_desc.color[0] = 50.0f;
+        l_desc.color[1] = 50.0f;
+        l_desc.color[2] = 50.0f;
+        new_scene->AddLight(l_desc);
+
+        l_desc.position[0] = -500;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = -100;
+        new_scene->AddLight(l_desc);
+
+        l_desc.position[0] = 0;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = 100;
+        new_scene->AddLight(l_desc);
+
+        l_desc.position[0] = 0;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = -100;
         new_scene->AddLight(l_desc);
 
         l_desc.position[0] = 500;
         l_desc.position[1] = 50;
-        l_desc.position[2] = 0;
+        l_desc.position[2] = 100;
         new_scene->AddLight(l_desc);
+
+        l_desc.position[0] = 500;
+        l_desc.position[1] = 50;
+        l_desc.position[2] = -100;
+        new_scene->AddLight(l_desc);*/
+    }
+
+    {
+        /*ray::light_desc_t l_desc;
+        l_desc.type = ray::SpotLight;
+        l_desc.position[0] = -1000;
+        l_desc.position[1] = dist;
+        l_desc.position[2] = -100;
+        l_desc.radius = 10;
+        l_desc.color[0] = d;
+        l_desc.color[1] = 50000.0f;
+        l_desc.color[2] = 50000.0f;
+        l_desc.direction[0] = 0.0f;
+        l_desc.direction[1] = -1.0f;
+        l_desc.direction[2] = 0.0f;
+        l_desc.angle = 90.0f;
+        new_scene->AddLight(l_desc);*/
+    }
+
+    {
+        /*ray::light_desc_t l_desc;
+        l_desc.type = ray::DirectionalLight;
+        l_desc.direction[0] = 0.707f;
+        l_desc.direction[1] = -0.707f;
+        l_desc.direction[2] = 0.0f;
+        l_desc.angle = 0.1f;
+        l_desc.color[0] = 5.75f;
+        l_desc.color[1] = 5.75f;
+        l_desc.color[2] = 5.75f;
+        new_scene->AddLight(l_desc);*/
     }
 
     return new_scene;

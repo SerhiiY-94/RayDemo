@@ -57,7 +57,7 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
         ray::settings_t s;
         s.w = w;
         s.h = h;
-        auto ray_renderer = ray::CreateRenderer(s, ray::RendererRef);
+        auto ray_renderer = ray::CreateRenderer(s);
         AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
 

@@ -64,7 +64,7 @@ void GSRayTest::UpdateRegionContexts() {
 }
 
 void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
-    if (ray_scene_) {
+    /*if (ray_scene_) {
         ray::environment_desc_t env_desc = {};
 
         ray_scene_->GetEnvironment(env_desc);
@@ -74,7 +74,7 @@ void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
         ray_scene_->SetEnvironment(env_desc);
 
         invalidate_preview_ = true;
-    }
+    }*/
 }
 
 void GSRayTest::Enter() {
