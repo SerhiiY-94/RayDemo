@@ -32,6 +32,6 @@ def unzip_file(file_name, unzip_dest):
 download_file('189FAfP3qt_UAY1HMF5SolJtvp8DRHnrG', 'libs.zip')
 unzip_file('libs.zip', 'src/')
 os.remove('libs.zip')
-download_file('1Hco2kR9P_0jEGobb36dtft9ECw7N_rQK', 'assets.zip')
+download_file('1s186GjqA-iL1Z9XvWVk1SpEtrqtV-_j1', 'assets.zip')
 unzip_file('assets.zip', '')
 os.remove('assets.zip')
