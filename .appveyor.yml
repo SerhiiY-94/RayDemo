@@ -46,7 +46,7 @@ after_build:
     
 test_script:
     - build\src\Eng\tests\%CONFIGURATION%\test_Eng
-    - build\src\ray\tests\%CONFIGURATION%\test_ray
+    - build\src\ray\tests\%CONFIGURATION%\test_Ray
     - build\src\Ren\tests\%CONFIGURATION%\test_Ren
     - build\src\Ren\SW\tests\%CONFIGURATION%\test_SW
     - build\src\Sys\tests\%CONFIGURATION%\test_Sys
