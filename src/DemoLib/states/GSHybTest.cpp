@@ -9,7 +9,7 @@
 #endif
 
 #include <Eng/GameStateManager.h>
-#include <ray/RendererFactory.h>
+#include <Ray/RendererFactory.h>
 #include <Sys/Json.h>
 #include <Sys/Log.h>
 #include <Sys/Time_.h>
@@ -34,10 +34,10 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    ray::settings_t s;
+    Ray::settings_t s;
     s.w = game->width;
     s.h = game->height;
-    cpu_tracer_ = ray::CreateRenderer(s, ray::RendererAVX | ray::RendererSSE | ray::RendererRef);
+    cpu_tracer_ = Ray::CreateRenderer(s, Ray::RendererAVX | Ray::RendererSSE | Ray::RendererRef);
 
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -52,13 +52,13 @@ void GSHybTest::UpdateRegionContexts() {
 
     {   // setup gpu renderers
         if (gpu_tracers_.size() == 2) {
-            auto rect1 = ray::rect_t{ 0, 0, (int)(ctx_->w() * gpu_gpu_div_fac_), gpu_start_hor };
+            auto rect1 = Ray::rect_t{ 0, 0, (int)(ctx_->w() * gpu_gpu_div_fac_), gpu_start_hor };
             gpu_region_contexts_.emplace_back(rect1);
 
-            auto rect2 = ray::rect_t{ (int)(ctx_->w() * gpu_gpu_div_fac_), 0, (int)(ctx_->w() * (1.0f - gpu_gpu_div_fac_)), gpu_start_hor };
+            auto rect2 = Ray::rect_t{ (int)(ctx_->w() * gpu_gpu_div_fac_), 0, (int)(ctx_->w() * (1.0f - gpu_gpu_div_fac_)), gpu_start_hor };
             gpu_region_contexts_.emplace_back(rect2);
         } else if (gpu_tracers_.size() == 1) {
-            auto rect = ray::rect_t{ 0, 0, ctx_->w(), gpu_start_hor };
+            auto rect = Ray::rect_t{ 0, 0, ctx_->w(), gpu_start_hor };
             gpu_region_contexts_.emplace_back(rect);
         }
     }
@@ -68,7 +68,7 @@ void GSHybTest::UpdateRegionContexts() {
 
         for (int y = gpu_start_hor; y < ctx_->h(); y += BUCKET_SIZE_Y) {
             for (int x = 0; x < ctx_->w(); x += BUCKET_SIZE_X) {
-                auto rect = ray::rect_t{ x, y,
+                auto rect = Ray::rect_t{ x, y,
                     std::min(ctx_->w() - x, BUCKET_SIZE_X),
                     std::min(ctx_->h() - y, BUCKET_SIZE_Y) };
 
@@ -82,14 +82,14 @@ void GSHybTest::UpdateRegionContexts() {
 }
 
 void GSHybTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
-    /*if (ray_scene_) {
-        ray::environment_desc_t env_desc = {};
+    /*if (Ray_scene_) {
+        Ray::environment_desc_t env_desc = {};
 
-        ray_scene_->GetEnvironment(env_desc);
+        Ray_scene_->GetEnvironment(env_desc);
 
         memcpy(&env_desc.sun_dir[0], math::value_ptr(sun_dir), 3 * sizeof(float));
 
-        ray_scene_->SetEnvironment(env_desc);
+        Ray_scene_->SetEnvironment(env_desc);
 
         invalidate_preview_ = true;
     }*/
@@ -98,17 +98,17 @@ void GSHybTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
 void GSHybTest::Enter() {
     using namespace Ren;
 
-    ocl_platforms_ = ray::ocl::QueryPlatforms();
+    ocl_platforms_ = Ray::Ocl::QueryPlatforms();
 
     for (int pi = 0; pi < (int)ocl_platforms_.size(); pi++) {
         for (int di = 0; di < (int)ocl_platforms_[pi].devices.size(); di++) {
-            ray::settings_t s;
+            Ray::settings_t s;
             s.w = game_->width;
             s.h = game_->height;
             s.platform_index = pi;
             s.device_index = di;
-            auto gpu_tracer = ray::CreateRenderer(s, ray::RendererOCL);
-            if (gpu_tracer->type() == ray::RendererOCL) {
+            auto gpu_tracer = Ray::CreateRenderer(s, Ray::RendererOCL);
+            if (gpu_tracer->type() == Ray::RendererOCL) {
                 gpu_tracers_.push_back(gpu_tracer);
             }
         }
@@ -163,9 +163,9 @@ void GSHybTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     for (auto &s : gpu_scenes_) {
-        s->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
+        s->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
     }
-    cpu_scene_->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
+    cpu_scene_->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
 
     auto t1 = Sys::GetTicks();
 
@@ -197,7 +197,7 @@ void GSHybTest::Draw(float dt_s) {
         }
     }
 
-    ray::RendererBase::stats_t st = {};
+    Ray::RendererBase::stats_t st = {};
 
     unsigned long long cpu_total = 0, gpu_total = 0;
 
@@ -211,7 +211,7 @@ void GSHybTest::Draw(float dt_s) {
     }
 
     if (!gpu_gpu_div_dac_dirty_ && gpu_tracers_.size() == 2) {
-        ray::RendererBase::stats_t st1, st2;
+        Ray::RendererBase::stats_t st1, st2;
         gpu_tracers_[0]->GetStats(st1);
         gpu_tracers_[1]->GetStats(st2);
 
@@ -237,7 +237,7 @@ void GSHybTest::Draw(float dt_s) {
 
     {
         for (auto &t : gpu_tracers_) {
-            ray::RendererBase::stats_t _st;
+            Ray::RendererBase::stats_t _st;
             t->GetStats(_st);
             t->ResetStats();
 
@@ -305,21 +305,21 @@ void GSHybTest::Draw(float dt_s) {
 
         if (draw_limits_) {
             for (int j = rect.y; j < rect.y + rect.h; j++) {
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 1] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 2] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 1] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 2] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 3] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 1] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + 2] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 1] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 2] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[j * w + rect.x + rect.w - 3] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
             }
 
             for (int j = rect.x; j < rect.x + rect.w; j++) {
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[rect.y * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 1) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 2) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 2) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 3) * w + j] = ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[rect.y * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 1) * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + 2) * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 2) * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(gpu_pixel_data)[(rect.y + rect.h - 3) * w + j] = Ray::pixel_color_t{ 0.0f, 1.0f, 0.0f, 1.0f };
             }
         }
 
@@ -332,32 +332,32 @@ void GSHybTest::Draw(float dt_s) {
         /*for (const auto &r : cpu_region_contexts_) {
             const auto rect = r.rect();
             for (int j = rect.y; j < rect.y + rect.h; j++) {
-                const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x + rect.w - 1] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + rect.x + rect.w - 1] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
             }
 
             for (int j = rect.x; j < rect.x + rect.w; j++) {
-                const_cast<ray::pixel_color_t*>(cpu_pixel_data)[rect.y * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-                const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[rect.y * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+                const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(rect.y + rect.h - 1) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
             }
         }*/
 
         for (int j = h - gpu_h; j < h; j++) {
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + 1] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + 2] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 1] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 2] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 3] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + 1] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + 2] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 1] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 2] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[j * w + w - 3] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
         }
 
         for (int j = 0; j < w; j++) {
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[gpu_h * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 2) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 1) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 2) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
-            const_cast<ray::pixel_color_t*>(cpu_pixel_data)[(h - 3) * w + j] = ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[gpu_h * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 1) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(gpu_h + 2) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(h - 1) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(h - 2) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
+            const_cast<Ray::pixel_color_t*>(cpu_pixel_data)[(h - 3) * w + j] = Ray::pixel_color_t{ 1.0f, 0.0f, 0.0f, 1.0f };
         }
     }
     swBlitPixels(0, gpu_h, 0, SW_FLOAT, SW_FRGBA, w, h - gpu_h, (const void *)(cpu_pixel_data + w * gpu_h), 1);
@@ -425,7 +425,7 @@ void GSHybTest::Draw(float dt_s) {
         // ui draw
         ui_renderer_->BeginDraw();
 
-        ray::RendererBase::stats_t st = {};
+        Ray::RendererBase::stats_t st = {};
         gpu_tracers_[0]->GetStats(st);
 
         float font_height = font_->height(ui_root_.get());

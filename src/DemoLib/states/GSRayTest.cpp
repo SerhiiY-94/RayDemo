@@ -34,7 +34,7 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_   = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
 
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -45,12 +45,12 @@ void GSRayTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         const int BUCKET_SIZE = 128;
 
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
-                auto rect = ray::rect_t{ x, y, 
+                auto rect = Ray::rect_t{ x, y, 
                     std::min(sz.first - x, BUCKET_SIZE),
                     std::min(sz.second - y, BUCKET_SIZE) };
 
@@ -58,14 +58,14 @@ void GSRayTest::UpdateRegionContexts() {
             }
         }
     } else {
-        auto rect = ray::rect_t{ 0, 0, sz.first, sz.second };
+        auto rect = Ray::rect_t{ 0, 0, sz.first, sz.second };
         region_contexts_.emplace_back(rect);
     }
 }
 
 void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
     /*if (ray_scene_) {
-        ray::environment_desc_t env_desc = {};
+        Ray::environment_desc_t env_desc = {};
 
         ray_scene_->GetEnvironment(env_desc);
 
@@ -152,7 +152,7 @@ void GSRayTest::Exit() {
 void GSRayTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, focal_distance_, 0.0f);
+    ray_scene_->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, focal_distance_, 0.0f);
 
     auto t1 = Sys::GetTicks();
 
@@ -164,7 +164,7 @@ void GSRayTest::Draw(float dt_s) {
 
     const auto rt = ray_renderer_->type();
 
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
         
         std::vector<std::future<void>> events;
@@ -180,13 +180,13 @@ void GSRayTest::Draw(float dt_s) {
         ray_renderer_->RenderScene(ray_scene_, region_contexts_[0]);
     }
 
-    ray::RendererBase::stats_t st;
+    Ray::RendererBase::stats_t st;
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 
     //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
 
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         st.time_primary_ray_gen_us /= threads_->num_workers();
         st.time_primary_trace_us /= threads_->num_workers();
         st.time_primary_shade_us /= threads_->num_workers();
@@ -283,7 +283,7 @@ void GSRayTest::Draw(float dt_s) {
         // ui draw
         ui_renderer_->BeginDraw();
 
-        ray::RendererBase::stats_t st = {};
+        Ray::RendererBase::stats_t st = {};
         ray_renderer_->GetStats(st);
 
         float font_height = font_->height(ui_root_.get());

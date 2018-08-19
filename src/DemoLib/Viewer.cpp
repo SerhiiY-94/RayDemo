@@ -54,10 +54,10 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
 
     {
         // create ray renderer
-        ray::settings_t s;
+        Ray::settings_t s;
         s.w = w;
         s.h = h;
-        auto ray_renderer = ray::CreateRenderer(s);
+        auto ray_renderer = Ray::CreateRenderer(s);
         AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
 

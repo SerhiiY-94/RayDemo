@@ -32,11 +32,11 @@ class GSHybTest : public GameState {
     std::shared_ptr<Gui::BaseElement> ui_root_;
     std::shared_ptr<Gui::BitmapFont> font_;
 
-    std::vector<std::shared_ptr<ray::RendererBase>> gpu_tracers_;
-    std::vector<std::shared_ptr<ray::SceneBase>> gpu_scenes_;
+    std::vector<std::shared_ptr<Ray::RendererBase>> gpu_tracers_;
+    std::vector<std::shared_ptr<Ray::SceneBase>> gpu_scenes_;
 
-    std::shared_ptr<ray::RendererBase> cpu_tracer_;
-    std::shared_ptr<ray::SceneBase> cpu_scene_;
+    std::shared_ptr<Ray::RendererBase> cpu_tracer_;
+    std::shared_ptr<Ray::SceneBase> cpu_scene_;
 
     std::shared_ptr<Sys::ThreadPool> threads_;
 
@@ -58,7 +58,7 @@ class GSHybTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
-    std::vector<ray::RendererBase::stats_t> stats_;
+    std::vector<Ray::RendererBase::stats_t> stats_;
 
     float gpu_gpu_div_fac_ = 0.5f;
     float gpu_cpu_div_fac_ = 0.85f;
@@ -66,10 +66,10 @@ class GSHybTest : public GameState {
 
     bool draw_limits_ = true;
 
-    std::vector<ray::ocl::Platform> ocl_platforms_;
+    std::vector<Ray::Ocl::Platform> ocl_platforms_;
 
-    std::vector<ray::RegionContext> gpu_region_contexts_;
-    std::vector<ray::RegionContext> cpu_region_contexts_;
+    std::vector<Ray::RegionContext> gpu_region_contexts_;
+    std::vector<Ray::RegionContext> cpu_region_contexts_;
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);

@@ -31,8 +31,8 @@ class GSRayTest : public GameState {
     std::shared_ptr<Gui::BaseElement> ui_root_;
     std::shared_ptr<Gui::BitmapFont> font_;
 
-    std::shared_ptr<ray::RendererBase> ray_renderer_;
-    std::shared_ptr<ray::SceneBase> ray_scene_;
+    std::shared_ptr<Ray::RendererBase> ray_renderer_;
+    std::shared_ptr<Ray::SceneBase> ray_scene_;
 
     std::shared_ptr<Sys::ThreadPool> threads_;
 
@@ -56,9 +56,9 @@ class GSRayTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
-    std::vector<ray::RendererBase::stats_t> stats_;
+    std::vector<Ray::RendererBase::stats_t> stats_;
 
-    std::vector<ray::RegionContext> region_contexts_;
+    std::vector<Ray::RegionContext> region_contexts_;
 
     void UpdateRegionContexts();
     void UpdateEnvironment(const Ren::Vec3f &sun_dir);

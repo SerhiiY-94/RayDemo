@@ -14,7 +14,7 @@
 #include <Sys/AssetFile.h>
 #include <Sys/Log.h>
 
-std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &js_scene) {
+std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene) {
     auto new_scene = r->CreateScene();
 
     Ren::Vec3f view_origin, view_dir = { 0, 0, -1 };
@@ -30,7 +30,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             auto data = LoadTGA(name, w, h);
             if (data.empty()) throw std::runtime_error("error loading texture");
 
-            ray::tex_desc_t tex_desc;
+            Ray::tex_desc_t tex_desc;
             tex_desc.data = &data[0];
             tex_desc.w = w;
             tex_desc.h = h;
@@ -70,7 +70,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsArray &js_sun_col = js_env.at("sun_col");
             const JsArray &js_sky_col = js_env.at("sky_col");
 
-            {   ray::environment_desc_t env_desc;
+            {   Ray::environment_desc_t env_desc;
 
                 env_desc.sky_col[0] = (float)((const JsNumber &)js_sky_col.at(0)).val;
                 env_desc.sky_col[1] = (float)((const JsNumber &)js_sky_col.at(1)).val;
@@ -79,8 +79,8 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
                 new_scene->SetEnvironment(env_desc);
             }
 
-            {   ray::light_desc_t sun_desc;
-                sun_desc.type = ray::DirectionalLight;
+            {   Ray::light_desc_t sun_desc;
+                sun_desc.type = Ray::DirectionalLight;
 
                 sun_desc.direction[0] = (float)((const JsNumber &)js_sun_dir.at(0)).val;
                 sun_desc.direction[1] = (float)((const JsNumber &)js_sun_dir.at(1)).val;
@@ -105,7 +105,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             const JsString &js_mat_name = js_mat.first;
             const JsObject &js_mat_obj = js_mat.second;
 
-            ray::mat_desc_t mat_desc;
+            Ray::mat_desc_t mat_desc;
 
             const JsString &js_type = js_mat_obj.at("type");
 
@@ -143,15 +143,15 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
             }
 
             if (js_type.val == "diffuse") {
-                mat_desc.type = ray::DiffuseMaterial;
+                mat_desc.type = Ray::DiffuseMaterial;
             } else if (js_type.val == "glossy") {
-                mat_desc.type = ray::GlossyMaterial;
+                mat_desc.type = Ray::GlossyMaterial;
             } else if (js_type.val == "refractive") {
-                mat_desc.type = ray::RefractiveMaterial;
+                mat_desc.type = Ray::RefractiveMaterial;
             } else if (js_type.val == "emissive") {
-                mat_desc.type = ray::EmissiveMaterial;
+                mat_desc.type = Ray::EmissiveMaterial;
             } else if (js_type.val == "mix") {
-                mat_desc.type = ray::MixMaterial;
+                mat_desc.type = Ray::MixMaterial;
 
                 const JsArray &mix_materials = js_mat_obj.at("materials");
                 for (const auto &m : mix_materials.elements) {
@@ -165,7 +165,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
                     }
                 }
             } else if (js_type.val == "transparent") {
-                mat_desc.type = ray::TransparentMaterial;
+                mat_desc.type = Ray::TransparentMaterial;
             } else {
                 throw std::runtime_error("unknown material type");
             }
@@ -192,9 +192,9 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
 
             const JsArray &js_materials = js_mesh_obj.at("materials");
 
-            ray::mesh_desc_t mesh_desc;
-            mesh_desc.prim_type = ray::TriangleList;
-            mesh_desc.layout = ray::PxyzNxyzTuv;
+            Ray::mesh_desc_t mesh_desc;
+            mesh_desc.prim_type = Ray::TriangleList;
+            mesh_desc.layout = Ray::PxyzNxyzTuv;
             mesh_desc.vtx_attrs = &attrs[0];
             mesh_desc.vtx_attrs_count = attrs.size() / 8;
             mesh_desc.vtx_indices = &indices[0];
@@ -239,7 +239,7 @@ std::shared_ptr<ray::SceneBase> LoadScene(ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
-    new_scene->AddCamera(ray::Persp, ray::Tent, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
+    new_scene->AddCamera(Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
 
     {
         /*ray::light_desc_t l_desc;
@@ -495,8 +495,8 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
-std::vector<ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h) {
-    std::vector<ray::pixel_color8_t> tex_data;
+std::vector<Ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h) {
+    std::vector<Ray::pixel_color8_t> tex_data;
 
     {
         std::ifstream in_file(name, std::ios::binary);

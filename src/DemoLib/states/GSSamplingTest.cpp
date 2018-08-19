@@ -13,8 +13,8 @@
 #include <Sys/Log.h>
 #include <Gui/Renderer.h>
 
-#include <ray/internal/Core.h>
-#include <ray/internal/Halton.h>
+#include <Ray/internal/Core.h>
+#include <Ray/internal/Halton.h>
 
 #include "../Viewer.h"
 #include "../ui/FontStorage.h"
@@ -67,7 +67,7 @@ void GSSamplingTest::Enter() {
 #endif
     using namespace GSSamplingTestInternal;
 
-    radical_inv_perms = ray::ComputeRadicalInversePermutations(ray::g_primes, ray::PrimesCount, ::rand);
+    radical_inv_perms = Ray::ComputeRadicalInversePermutations(Ray::g_primes, Ray::PrimesCount, ::rand);
 }
 
 void GSSamplingTest::Exit() {
@@ -174,7 +174,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
                         //float rx = RadicalInverse<3>(ndx);
                         float _unused;
-                        float rx = std::modf(ray::ScrambledRadicalInverse<29>(&radical_inv_perms[100], ndx) + ff, &_unused);
+                        float rx = std::modf(Ray::ScrambledRadicalInverse<29>(&radical_inv_perms[100], ndx) + ff, &_unused);
                         float ry = 0;//RadicalInverse<2>(i * nsamplesx + nx);
 
                         //sum += EvalFunc(x + (nx + rx) / nsamplesx, y + (ny + ry) / nsamplesy, width, height);
@@ -197,9 +197,9 @@ void GSSamplingTest::Draw(float dt_s) {
     int i = (int)iteration_ * nsamplesx;
     for (int j = 0; j < nsamplesx; j++) {
         //float rx = RadicalInverse<3>(i + j);
-        float rx = ray::ScrambledRadicalInverse<3>(&radical_inv_perms[2], (3000 + i + j) % 4096);
+        float rx = Ray::ScrambledRadicalInverse<3>(&radical_inv_perms[2], (3000 + i + j) % 4096);
         //float ry = RadicalInverse<5>(i + j);
-        float ry = ray::ScrambledRadicalInverse<5>(&radical_inv_perms[5], (3000 + i + j) % 4096);
+        float ry = Ray::ScrambledRadicalInverse<5>(&radical_inv_perms[5], (3000 + i + j) % 4096);
 
         int x = rx * (width - 0);
         int y = height - 1 - ry * (height - 0);
@@ -220,9 +220,9 @@ void GSSamplingTest::Draw(float dt_s) {
     int i = (int)iteration_ * nsamplesx;
     for (int j = 0; j < nsamplesx; j++) {
         //float rx = RadicalInverse<3>(i + j);
-        float rx = ray::ScrambledRadicalInverse<3>(&radical_inv_perms[2], (i + j));
+        float rx = Ray::ScrambledRadicalInverse<3>(&radical_inv_perms[2], (i + j));
         //float ry = RadicalInverse<5>(i + j);
-        float ry = ray::ScrambledRadicalInverse<5>(&radical_inv_perms[5], (i + j));
+        float ry = Ray::ScrambledRadicalInverse<5>(&radical_inv_perms[5], (i + j));
 
 
         if (true) {

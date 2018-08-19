@@ -68,7 +68,7 @@ GSRayBucketTest::GSRayBucketTest(GameBase *game) : game_(game) {
     const auto fonts = game->GetComponent<FontStorage>(UI_FONTS_KEY);
     font_ = fonts->FindFont("main_font");
 
-    ray_renderer_   = game->GetComponent<ray::RendererBase>(RAY_RENDERER_KEY);
+    ray_renderer_   = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
 
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
@@ -93,10 +93,10 @@ void GSRayBucketTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         /*for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
-                auto rect = ray::rect_t{ x, y, 
+                auto rect = Ray::rect_t{ x, y, 
                     std::min(sz.first - x, BUCKET_SIZE),
                     std::min(sz.second - y, BUCKET_SIZE) };
 
@@ -128,7 +128,7 @@ void GSRayBucketTest::UpdateRegionContexts() {
             x *= BUCKET_SIZE;
             y *= BUCKET_SIZE;
 
-            auto rect = ray::rect_t{ x, y,
+            auto rect = Ray::rect_t{ x, y,
                     std::min(sz.first - x, BUCKET_SIZE),
                     std::min(sz.second - y, BUCKET_SIZE) };
 
@@ -136,14 +136,14 @@ void GSRayBucketTest::UpdateRegionContexts() {
         }
 
     } else {
-        auto rect = ray::rect_t{ 0, 0, sz.first, sz.second };
+        auto rect = Ray::rect_t{ 0, 0, sz.first, sz.second };
         region_contexts_.emplace_back(rect);
     }
 
     is_active_.resize(region_contexts_.size(), false);
     is_aborted_.resize(region_contexts_.size(), false);
 
-    if (rt == ray::RendererRef || rt == ray::RendererSSE || rt == ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         auto render_job = [this](int i, int m) {
             if (is_aborted_[i]) return;
 
@@ -182,7 +182,7 @@ void GSRayBucketTest::UpdateRegionContexts() {
 
 void GSRayBucketTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
     /*if (ray_scene_) {
-        ray::environment_desc_t env_desc = {};
+        Ray::environment_desc_t env_desc = {};
 
         ray_scene_->GetEnvironment(env_desc);
 
@@ -239,7 +239,7 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, ray::Persp, ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
+    ray_scene_->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
 
     auto t1 = Sys::GetTicks();
 
@@ -328,7 +328,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         // ui draw
         ui_renderer_->BeginDraw();
 
-        ray::RendererBase::stats_t st = {};
+        Ray::RendererBase::stats_t st = {};
         ray_renderer_->GetStats(st);
 
         float font_height = font_->height(ui_root_.get());

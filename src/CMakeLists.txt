@@ -69,14 +69,14 @@ set_target_properties(DemoApp
                       DemoLib PROPERTIES FOLDER App)
 
 set_target_properties(Eng
-                      ray
+                      Ray
                       Ren
                       SW
                       Sys 
                       Gui PROPERTIES FOLDER Libs)
 
 set_target_properties(test_Eng
-                      test_ray
+                      test_Ray
                       test_Ren
                       test_SW
                       test_Sys

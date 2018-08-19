@@ -35,8 +35,8 @@ class GSRayBucketTest : public GameState {
     std::shared_ptr<Gui::BaseElement> ui_root_;
     std::shared_ptr<Gui::BitmapFont> font_;
 
-    std::shared_ptr<ray::RendererBase> ray_renderer_;
-    std::shared_ptr<ray::SceneBase> ray_scene_;
+    std::shared_ptr<Ray::RendererBase> ray_renderer_;
+    std::shared_ptr<Ray::SceneBase> ray_scene_;
 
     std::shared_ptr<Sys::ThreadPool> threads_;
 
@@ -58,7 +58,7 @@ class GSRayBucketTest : public GameState {
     unsigned int time_acc_ = 0;
     int time_counter_ = 0;
 
-    std::vector<ray::RegionContext> region_contexts_;
+    std::vector<Ray::RegionContext> region_contexts_;
     std::vector<std::future<void>> events_;
 
     // leads to race condition, but doesnt matter
