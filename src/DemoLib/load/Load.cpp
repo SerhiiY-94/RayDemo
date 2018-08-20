@@ -1,6 +1,7 @@
 #include "Load.h"
 
 #include <cassert>
+#include <cctype>
 
 #include <algorithm>
 #include <fstream>
@@ -27,7 +28,14 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         auto it = textures.find(name);
         if (it == textures.end()) {
             int w, h;
-            auto data = LoadTGA(name, w, h);
+            std::vector<Ray::pixel_color8_t> data;
+            if (std::tolower(name[name.length() - 1]) == 'r' &&
+                std::tolower(name[name.length() - 2]) == 'd' &&
+                std::tolower(name[name.length() - 3]) == 'h') {
+                data = LoadHDR(name, w, h);
+            } else {
+                data = LoadTGA(name, w, h);
+            }
             if (data.empty()) throw std::runtime_error("error loading texture");
 
             Ray::tex_desc_t tex_desc;
@@ -68,13 +76,26 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             const JsObject &js_env = js_scene.at("environment");
             const JsArray &js_sun_dir = js_env.at("sun_dir");
             const JsArray &js_sun_col = js_env.at("sun_col");
-            const JsArray &js_sky_col = js_env.at("sky_col");
 
             {   Ray::environment_desc_t env_desc;
+                env_desc.env_col[0] = env_desc.env_col[1] = env_desc.env_col[2] = 0.0f;
 
-                env_desc.sky_col[0] = (float)((const JsNumber &)js_sky_col.at(0)).val;
-                env_desc.sky_col[1] = (float)((const JsNumber &)js_sky_col.at(1)).val;
-                env_desc.sky_col[2] = (float)((const JsNumber &)js_sky_col.at(2)).val;
+                if (js_env.Has("env_col")) {
+                    const JsArray &js_env_col = js_env.at("env_col");
+                    env_desc.env_col[0] = (float)((const JsNumber &)js_env_col.at(0)).val;
+                    env_desc.env_col[1] = (float)((const JsNumber &)js_env_col.at(1)).val;
+                    env_desc.env_col[2] = (float)((const JsNumber &)js_env_col.at(2)).val;
+                }
+
+                if (js_env.Has("env_clamp")) {
+                    const JsNumber &js_env_clamp = js_env.at("env_clamp");
+                    env_desc.env_clamp = (float)js_env_clamp.val;
+                }
+
+                if (js_env.Has("env_map")) {
+                    const JsString &js_env_map = js_env.at("env_map");
+                    env_desc.env_map = get_texture(js_env_map.val, false);
+                }
 
                 new_scene->SetEnvironment(env_desc);
             }
@@ -379,7 +400,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 #endif
 
                 if (!found) {
-                    indices.push_back(attrs.size() / 8);
+                    indices.push_back((uint32_t)(attrs.size() / 8));
                     attrs.push_back(v[i1 * 3]);
                     attrs.push_back(v[i1 * 3 + 1]);
                     attrs.push_back(v[i1 * 3 + 2]);
@@ -394,9 +415,9 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
             }
         } else if (tok == "g") {
             if (!groups.empty()) {
-                groups.push_back(indices.size() - groups.back());
+                groups.push_back((uint32_t)(indices.size() - groups.back()));
             }
-            groups.push_back(indices.size());
+            groups.push_back((uint32_t)indices.size());
         }
     }
 
@@ -404,7 +425,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
         groups.push_back(0);
     }
 
-    groups.push_back(indices.size() - groups.back());
+    groups.push_back((uint32_t)(indices.size() - groups.back()));
 
 #if 1
     {
@@ -530,4 +551,142 @@ std::vector<Ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h
     }
 
     return tex_data;
+}
+
+std::vector<Ray::pixel_color8_t> LoadHDR(const std::string &name, int &out_w, int &out_h) {
+    std::ifstream in_file(name, std::ios::binary);
+
+    std::string line;
+    if (!std::getline(in_file, line) || line != "#?RADIANCE") {
+        throw std::runtime_error("Is not HDR file!");
+    }
+
+    float exposure = 1.0f;
+    std::string format;
+
+    while (std::getline(in_file, line)) {
+        if (line.empty()) break;
+
+        if (!line.compare(0, 6, "FORMAT")) {
+            format = line.substr(7);
+        } else if (!line.compare(0, 8, "EXPOSURE")) {
+            exposure = (float)atof(line.substr(9).c_str());
+        }
+    }
+
+    if (format != "32-bit_rle_rgbe") {
+        throw std::runtime_error("Wrong format!");
+    }
+
+    int res_x = 0, res_y = 0;
+
+    std::string resolution;
+    if (!std::getline(in_file, resolution)) {
+        throw std::runtime_error("Cannot read resolution!");
+    }
+
+    {
+        std::stringstream ss(resolution);
+        std::string tok;
+
+        ss >> tok;
+        if (tok != "-Y") {
+            throw std::runtime_error("Unsupported format!");
+        }
+
+        ss >> tok;
+        res_y = atoi(tok.c_str());
+
+        ss >> tok;
+        if (tok != "+X") {
+            throw std::runtime_error("Unsupported format!");
+        }
+
+        ss >> tok;
+        res_x = atoi(tok.c_str());
+    }
+
+    if (!res_x || !res_y) {
+        throw std::runtime_error("Unsupported format!");
+    }
+
+    out_w = res_x;
+    out_h = res_y;
+
+    std::vector<Ray::pixel_color8_t> data(res_x * res_y * 4);
+    int data_offset = 0;
+
+    int scanlines_left = res_y;
+    std::vector<uint8_t> scanline(res_x * 4);
+
+    while (scanlines_left) {
+        {
+            uint8_t rgbe[4];
+
+            if (!in_file.read((char *)&rgbe[0], 4)) {
+                throw std::runtime_error("Cannot read file!");
+            }
+
+            if ((rgbe[0] != 2) || (rgbe[1] != 2) || ((rgbe[2] & 0x80) != 0)) {
+                data[0].r = rgbe[0];
+                data[0].g = rgbe[1];
+                data[0].b = rgbe[2];
+                data[0].a = rgbe[3];
+
+                if (!in_file.read((char *)&data[4], (res_x * scanlines_left - 1) * 4)) {
+                    throw std::runtime_error("Cannot read file!");
+                }
+                return data;
+            }
+
+            if ((((rgbe[2] & 0xFF) << 8) | (rgbe[3] & 0xFF)) != res_x) {
+                throw std::runtime_error("Wrong scanline width!");
+            }
+        }
+
+        int index = 0;
+        for (int i = 0; i < 4; i++) {
+            int index_end = (i + 1) * res_x;
+            while (index < index_end) {
+                uint8_t buf[2];
+                if (!in_file.read((char *)&buf[0], 2)) {
+                    throw std::runtime_error("Cannot read file!");
+                }
+
+                if (buf[0] > 128) {
+                    int count = buf[0] - 128;
+                    if ((count == 0) || (count > index_end - index)) {
+                        throw std::runtime_error("Wrong data!");
+                    }
+                    while (count-- > 0) {
+                        scanline[index++] = buf[1];
+                    }
+                } else {
+                    int count = buf[0];
+                    if ((count == 0) || (count > index_end - index)) {
+                        throw std::runtime_error("Wrong data!");
+                    }
+                    scanline[index++] = buf[1];
+                    if (--count > 0) {
+                        if (!in_file.read((char *)&scanline[index], count)) {
+                            throw std::runtime_error("Cannot read file!");
+                        }
+                        index += count;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < res_x; i++) {
+            data[data_offset].r = scanline[i + 0 * res_x];
+            data[data_offset].g = scanline[i + 1 * res_x];
+            data[data_offset].b = scanline[i + 2 * res_x];
+            data[data_offset].a = scanline[i + 3 * res_x];
+            data_offset++;
+        }
+
+        scanlines_left--;
+    }
+
+    return data;
 }

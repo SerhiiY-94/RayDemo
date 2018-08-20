@@ -16,3 +16,5 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadRAW(const std::string &file_name);
 
 std::vector<Ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h);
+
+std::vector<Ray::pixel_color8_t> LoadHDR(const std::string &name, int &w, int &h);

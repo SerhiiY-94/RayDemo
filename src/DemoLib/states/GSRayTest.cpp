@@ -120,7 +120,7 @@ void GSRayTest::Enter() {
     view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
 
     UpdateRegionContexts();
-
+#if 0
     int w, h;
     auto pixels = LoadTGA("C:\\Users\\MA\\Documents\\untitled.tga", w, h);
 
@@ -143,6 +143,7 @@ void GSRayTest::Enter() {
 
         out_file << "\n};\n";
     }
+#endif
 }
 
 void GSRayTest::Exit() {

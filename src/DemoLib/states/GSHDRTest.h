@@ -2,6 +2,7 @@
 
 #include <Eng/GameState.h>
 #include <Eng/go/Go.h>
+#include <Ray/Types.h>
 #include <Ren/Camera.h>
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
@@ -31,7 +32,7 @@ class GSHDRTest : public GameState {
     std::shared_ptr<Gui::BaseElement> ui_root_;
     std::shared_ptr<Gui::BitmapFont> font_;
 
-    std::vector<uint8_t> img_;
+    std::vector<Ray::pixel_color8_t> img_;
     int img_w_, img_h_;
     float mul_ = 1.0f;
     std::vector<float> pixels_;
