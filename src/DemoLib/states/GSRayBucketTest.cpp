@@ -222,9 +222,11 @@ void GSRayBucketTest::Enter() {
         }
     }
 
-    const auto &cam = ray_scene_->GetCamera(0);
-    view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
-    view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
+    Ray::camera_desc_t cam_desc;
+    ray_scene_->GetCamera(0, cam_desc);
+
+    memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
+    memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
 
     UpdateRegionContexts();
 }
@@ -239,7 +241,15 @@ void GSRayBucketTest::Draw(float dt_s) {
 
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    ray_scene_->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
+    {   // update camera
+        Ray::camera_desc_t cam_desc;
+        ray_scene_->GetCamera(0, cam_desc);
+
+        memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
+        memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
+
+        ray_scene_->SetCamera(0, cam_desc);
+    }
 
     auto t1 = Sys::GetTicks();
 

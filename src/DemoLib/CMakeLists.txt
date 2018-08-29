@@ -22,6 +22,8 @@ set(STATES_SOURCES  states/GSCreate.h
 					states/GSRayTest.cpp
 					states/GSRayBucketTest.h
 					states/GSRayBucketTest.cpp
+					states/GSLightmapTest.h
+					states/GSLightmapTest.cpp
 					states/GSSamplingTest.h
 					states/GSSamplingTest.cpp)
 

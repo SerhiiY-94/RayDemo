@@ -7,6 +7,7 @@
 #include "GSHybTest.h"
 #include "GSRayTest.h"
 #include "GSRayBucketTest.h"
+#include "GSLightmapTest.h"
 #include "GSSamplingTest.h"
 
 std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game) {
@@ -22,6 +23,8 @@ std::shared_ptr<GameState> GSCreate(eGameState state, GameBase *game) {
         return std::make_shared<GSHybTest>(game);
     } else if (state == GS_HDR_TEST) {
         return std::make_shared<GSHDRTest>(game);
+    } else if (state == GS_LM_TEST) {
+        return std::make_shared<GSLightmapTest>(game);
     }
     throw std::invalid_argument("Unknown game state!");
 }

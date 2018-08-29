@@ -6,4 +6,5 @@
 #include "GSHybTest.cpp"
 #include "GSRayTest.cpp"
 #include "GSRayBucketTest.cpp"
+#include "GSLightmapTest.cpp"
 #include "GSSamplingTest.cpp"

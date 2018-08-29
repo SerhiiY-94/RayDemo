@@ -148,9 +148,11 @@ void GSHybTest::Enter() {
         }
     }
 
-    const auto &cam = cpu_scene_->GetCamera(0);
-    view_origin_ = { cam.origin[0], cam.origin[1], cam.origin[2] };
-    view_dir_ = { cam.fwd[0], cam.fwd[1], cam.fwd[2] };
+    Ray::camera_desc_t cam_desc;
+    cpu_scene_->GetCamera(0, cam_desc);
+
+    memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
+    memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
 
     UpdateRegionContexts();
 }
@@ -162,10 +164,18 @@ void GSHybTest::Exit() {
 void GSHybTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
-    for (auto &s : gpu_scenes_) {
-        s->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
+    {   // update camera
+        Ray::camera_desc_t cam_desc;
+        cpu_scene_->GetCamera(0, cam_desc);
+
+        memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
+        memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
+
+        for (auto &s : gpu_scenes_) {
+            s->SetCamera(0, cam_desc);
+        }
+        cpu_scene_->SetCamera(0, cam_desc);
     }
-    cpu_scene_->SetCamera(0, Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin_), Ren::ValuePtr(view_dir_), 45.0f, 2.2f, 1.0f, 0.0f);
 
     auto t1 = Sys::GetTicks();
 
@@ -222,9 +232,9 @@ void GSHybTest::Draw(float dt_s) {
             st2.time_primary_shade_us + st2.time_secondary_sort_us + st2.time_secondary_trace_us + st2.time_secondary_shade_us;
 
         if (time_total2 > time_total1) {
-            gpu_gpu_div_fac_ += 0.02;
+            gpu_gpu_div_fac_ += 0.02f;
         } else {
-            gpu_gpu_div_fac_ -= 0.02;
+            gpu_gpu_div_fac_ -= 0.02f;
         }
 
         if (gpu_gpu_div_fac_ < 0.05f) gpu_gpu_div_fac_ = 0.05f;

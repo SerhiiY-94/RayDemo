@@ -1,4 +1,4 @@
-#include "GSRayTest.h"
+#include "GSLightmapTest.h"
 
 #include <fstream>
 #include <sstream>
@@ -20,11 +20,11 @@
 #include "../load/Load.h"
 #include "../ui/FontStorage.h"
 
-namespace GSRayTestInternal {
+namespace GSLightmapTestInternal {
 const float FORWARD_SPEED = 1.0f;
 }
 
-GSRayTest::GSRayTest(GameBase *game) : game_(game) {
+GSLightmapTest::GSLightmapTest(GameBase *game) : game_(game) {
     state_manager_  = game->GetComponent<GameStateManager>(STATE_MANAGER_KEY);
     ctx_            = game->GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
@@ -39,7 +39,7 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
 
-void GSRayTest::UpdateRegionContexts() {
+void GSLightmapTest::UpdateRegionContexts() {
     region_contexts_.clear();
 
     const auto rt = ray_renderer_->type();
@@ -63,7 +63,7 @@ void GSRayTest::UpdateRegionContexts() {
     }
 }
 
-void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
+void GSLightmapTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
     /*if (ray_scene_) {
         Ray::environment_desc_t env_desc = {};
 
@@ -77,7 +77,7 @@ void GSRayTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
     }*/
 }
 
-void GSRayTest::Enter() {
+void GSLightmapTest::Enter() {
     using namespace Ren;
 
     max_fwd_speed_ = GSRayTestInternal::FORWARD_SPEED;
@@ -85,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/test_lmap.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -115,11 +115,33 @@ void GSRayTest::Enter() {
         }
     }
 
-    Ray::camera_desc_t cam_desc;
-    ray_scene_->GetCamera(0, cam_desc);
+    {
+        Ray::camera_desc_t cam_desc;
+        ray_scene_->GetCamera(0, cam_desc);
+        cam_desc.lighting_only = true;
+        cam_desc.skip_direct_lighting = true;
+        //cam_desc.skip_indirect_lighting = true;
+        //cam_desc.no_background = true;
 
-    memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
-    memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
+        ray_scene_->SetCamera(0, cam_desc);
+
+        memcpy(&view_origin_[0], &cam_desc.origin[0], 3 * sizeof(float));
+        memcpy(&view_dir_[0], &cam_desc.fwd[0], 3 * sizeof(float));
+    }
+
+    {   // add camera for lightmapping
+        Ray::camera_desc_t cam_desc;
+        cam_desc.type = Ray::Geo;
+        cam_desc.mi_index = 0;
+        cam_desc.gamma = 2.2f;
+        cam_desc.lighting_only = true;
+        cam_desc.skip_direct_lighting = true;
+        //cam_desc.skip_indirect_lighting = true;
+        cam_desc.no_background = true;
+
+        uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
+        ray_scene_->set_current_cam(cam_index);
+    }
 
     UpdateRegionContexts();
 #if 0
@@ -148,11 +170,11 @@ void GSRayTest::Enter() {
 #endif
 }
 
-void GSRayTest::Exit() {
+void GSLightmapTest::Exit() {
 
 }
 
-void GSRayTest::Draw(float dt_s) {
+void GSLightmapTest::Draw(float dt_s) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     {   // update camera
@@ -341,7 +363,7 @@ void GSRayTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSRayTest::Update(int dt_ms) {
+void GSLightmapTest::Update(int dt_ms) {
     using namespace Ren;
 
     const float Pi = 3.14159265358979323846f;
@@ -384,8 +406,8 @@ void GSRayTest::Update(int dt_ms) {
 
 }
 
-void GSRayTest::HandleInput(InputManager::Event evt) {
-    using namespace GSRayTestInternal;
+void GSLightmapTest::HandleInput(InputManager::Event evt) {
+    using namespace GSLightmapTestInternal;
     using namespace Ren;
 
     switch (evt.type) {

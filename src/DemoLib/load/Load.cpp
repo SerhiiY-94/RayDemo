@@ -15,6 +15,8 @@
 #include <Sys/AssetFile.h>
 #include <Sys/Log.h>
 
+#define _abs(x) ((x) > 0.0f ? (x) : -(x))
+
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene) {
     auto new_scene = r->CreateScene();
 
@@ -260,7 +262,17 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
-    new_scene->AddCamera(Ray::Persp, Ray::Tent, Ren::ValuePtr(view_origin), Ren::ValuePtr(view_dir), 45.0f, 2.2f, 1.0f, 0.0f);
+    Ray::camera_desc_t cam_desc;
+    cam_desc.type = Ray::Persp;
+    cam_desc.filter = Ray::Tent;
+    memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin), 3 * sizeof(float));
+    memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir), 3 * sizeof(float));
+    cam_desc.fov = 45.0f;
+    cam_desc.gamma = 2.2f;
+    cam_desc.focus_distance = 1.0f;
+    cam_desc.focus_factor = 0.0f;
+
+    new_scene->AddCamera(cam_desc);
 
     {
         /*ray::light_desc_t l_desc;
@@ -383,18 +395,26 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
                 bool found = false;
 #if 1
-                for (int i = (int)attrs.size()/8 - 1; i >= std::max(0, (int)attrs.size() / 8 - 1000); i--) {
-                    if (std::abs(attrs[i * 8 + 0] - v[i1 * 3]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 1] - v[i1 * 3 + 1]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 2] - v[i1 * 3 + 2]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 3] - vn[i3 * 3]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 4] - vn[i3 * 3 + 1]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 5] - vn[i3 * 3 + 2]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 6] - vt[i2 * 2]) < 0.0000001f &&
-                            std::abs(attrs[i * 8 + 7] - vt[i2 * 2 + 1]) < 0.0000001f) {
-                        indices.push_back(i);
-                        found = true;
-                        break;
+                if (!attrs.empty()) {
+                    // avoid bound checks in debug
+                    const float *_attrs = &attrs[0];
+                    const float *_v = &v[0];
+                    const float *_vn = &vn[0];
+                    const float *_vt = &vt[0];
+                    int last_index = std::max(0, (int)attrs.size() / 8 - 1000);
+                    for (int i = (int)attrs.size() / 8 - 1; i >= last_index; i--) {
+                        if (_abs(_attrs[i * 8 + 0] - _v[i1 * 3]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 1] - _v[i1 * 3 + 1]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 2] - _v[i1 * 3 + 2]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 3] - _vn[i3 * 3]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 4] - _vn[i3 * 3 + 1]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 5] - _vn[i3 * 3 + 2]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 6] - _vt[i2 * 2]) < 0.0000001f &&
+                            _abs(_attrs[i * 8 + 7] - _vt[i2 * 2 + 1]) < 0.0000001f) {
+                            indices.push_back(i);
+                            found = true;
+                            break;
+                        }
                     }
                 }
 #endif
@@ -453,7 +473,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     }
 #endif
 
-#if 1
+#if 0
     {
         std::string out_file_name = file_name;
         out_file_name[out_file_name.size() - 3] = 'h';
@@ -690,3 +710,5 @@ std::vector<Ray::pixel_color8_t> LoadHDR(const std::string &name, int &out_w, in
 
     return data;
 }
+
+#undef _abs
