@@ -133,6 +133,7 @@ void GSLightmapTest::Enter() {
         Ray::camera_desc_t cam_desc;
         cam_desc.type = Ray::Geo;
         cam_desc.mi_index = 0;
+        cam_desc.uv_index = 0;
         cam_desc.gamma = 2.2f;
         cam_desc.lighting_only = true;
         cam_desc.skip_direct_lighting = true;
