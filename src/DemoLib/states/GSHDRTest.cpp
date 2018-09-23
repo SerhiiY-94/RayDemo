@@ -21,7 +21,56 @@
 #include "../ui/FontStorage.h"
 
 namespace GSHDRTestInternal {
+    double LegendrePolynomial(int l, int m, double x) {
+        double pmm = 1.0;
+        if (m > 0) {
+            double somx2 = std::sqrt((1.0 - x) * (1.0 + x));
+            double fact = 1.0;
+            for (int i = 1; i <= m; i++) {
+                pmm *= (-fact) * somx2;
+                fact += 2.0;
+            }
+        }
+        if (l == m) return pmm;
+        double pmmp1 = x * (2.0 * m + 1.0) * pmm;
+        if (l == m + 1) return pmmp1;
+        double pll = 0.0;
+        for (int ll = m + 2; ll <= l; ll++) {
+            pll = ((2.0 * ll - 1.0) * x * pmmp1 - (ll + m - 1.0) * pmm) / (ll - m);
+            pmm = pmmp1;
+            pmmp1 = pll;
+        }
+        return pll;
+    }
 
+    int factorial(int x) {
+        int ret = 1;
+        for (int i = 2; i <= x; i++) {
+            ret *= i;
+        }
+        return ret;
+    }
+
+    double SH_RenormConstant(int l, int m) {
+        const double Pi = 3.1415926535897932384626433832795;
+        double temp = ((2.0 * l + 1.0) * factorial(l - m)) / (4.0 * Pi * factorial(l + m));
+        return std::sqrt(temp);
+    }
+
+    // l - band in range [0..N]
+    // m in range [-l..l]
+    // theta in range [0..Pi]
+    // phi in range [0..2*Pi]
+    double SH_Evaluate(int l, int m, double theta, double phi) {
+        const double sqrt2 = std::sqrt(2.0);
+        if (m == 0) {
+            return SH_RenormConstant(l, 0) * LegendrePolynomial(l, m, std::cos(theta));
+        } else if (m > 0) {
+            return sqrt2 * SH_RenormConstant(l, m) * std::cos(m * phi) * LegendrePolynomial(l, m, std::cos(theta));
+        } else {
+            return sqrt2 * SH_RenormConstant(l, -m) * std::sin(-m * phi) * LegendrePolynomial(l, -m, std::cos(theta));
+        }
+    }
 }
 
 GSHDRTest::GSHDRTest(GameBase *game) : game_(game) {

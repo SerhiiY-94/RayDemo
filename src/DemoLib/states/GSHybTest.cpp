@@ -98,6 +98,7 @@ void GSHybTest::UpdateEnvironment(const Ren::Vec3f &sun_dir) {
 void GSHybTest::Enter() {
     using namespace Ren;
 
+#if !defined(DISABLE_OCL)
     ocl_platforms_ = Ray::Ocl::QueryPlatforms();
 
     for (int pi = 0; pi < (int)ocl_platforms_.size(); pi++) {
@@ -113,10 +114,11 @@ void GSHybTest::Enter() {
             }
         }
     }
+#endif
 
     JsObject js_scene;
 
-    { 
+    {
         std::ifstream in_file("./assets/scenes/inter.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
@@ -130,7 +132,7 @@ void GSHybTest::Enter() {
             events.push_back(threads_->enqueue([this, &js_scene](size_t i) { gpu_scenes_[i] = LoadScene(gpu_tracers_[i].get(), js_scene); }, i));
         }
         cpu_scene_ = LoadScene(cpu_tracer_.get(), js_scene);
-        
+
         for (auto &e : events) {
             e.wait();
         }
@@ -335,7 +337,7 @@ void GSHybTest::Draw(float dt_s) {
 
         swBlitPixels(rect.x, rect.y, w, SW_FLOAT, SW_FRGBA, rect.w, rect.h, (const void *)gpu_pixel_data, 1);
     }
-    
+
     const int gpu_h = gpu_region_contexts_[0].rect().h;
 
     if (draw_limits_) {
@@ -379,9 +381,9 @@ void GSHybTest::Draw(float dt_s) {
         int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
         int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
         int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + 
+        int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
                                   st.time_secondary_shade_us) / time_total);
-        int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us + 
+        int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us +
                                   st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
         int p5 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
                                   st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);

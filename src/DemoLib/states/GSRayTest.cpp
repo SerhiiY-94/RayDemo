@@ -197,8 +197,6 @@ void GSRayTest::Draw(float dt_s) {
     ray_renderer_->GetStats(st);
     ray_renderer_->ResetStats();
 
-    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
-
     if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
         st.time_primary_ray_gen_us /= threads_->num_workers();
         st.time_primary_trace_us /= threads_->num_workers();
@@ -207,6 +205,9 @@ void GSRayTest::Draw(float dt_s) {
         st.time_secondary_trace_us /= threads_->num_workers();
         st.time_secondary_shade_us /= threads_->num_workers();
     }
+
+    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
+    LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
 
     stats_.push_back(st);
     if (stats_.size() > 128) {

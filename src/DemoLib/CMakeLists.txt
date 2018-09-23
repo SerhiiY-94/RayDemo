@@ -3,6 +3,11 @@ project(DemoLib)
 
 add_definitions(-DBUILDING_DLL)
 
+if(ENABLE_OPENCL)
+else()
+    add_definitions(-DDISABLE_OCL)
+endif()
+
 set(SOURCE_FILES    exports.cpp
 					Viewer.h
                     Viewer.cpp)
