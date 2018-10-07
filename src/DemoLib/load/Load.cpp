@@ -271,6 +271,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     cam_desc.gamma = 2.2f;
     cam_desc.focus_distance = 1.0f;
     cam_desc.focus_factor = 0.0f;
+    cam_desc.clamp = true;
 
     new_scene->AddCamera(cam_desc);
 
@@ -550,7 +551,7 @@ std::vector<Ray::pixel_color8_t> LoadTGA(const std::string &name, int &w, int &h
         std::vector<char> in_file_data(in_file_size);
         in_file.read(&in_file_data[0], in_file_size);
 
-        Ren::eTex2DFormat format;
+        Ren::eTexColorFormat format;
         auto pixels = Ren::ReadTGAFile(&in_file_data[0], w, h, format);
 
         if (format == Ren::RawRGB888) {

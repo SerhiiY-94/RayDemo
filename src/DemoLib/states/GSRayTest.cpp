@@ -207,7 +207,7 @@ void GSRayTest::Draw(float dt_s) {
     }
 
     //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
-    LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
+    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
 
     stats_.push_back(st);
     if (stats_.size() > 128) {
@@ -409,10 +409,10 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
             Mat3f rot_m3 = Mat3f(rot);
 
             if (!view_targeted_) {
-                view_dir_ = view_dir_ * rot_m3;
+                view_dir_ = rot_m3 * view_dir_;
             } else {
                 Vec3f dir = view_origin_ - view_target_;
-                dir = dir * rot_m3;
+                dir = rot_m3 * dir;
                 view_origin_ = view_target_ + dir;
                 view_dir_ = Normalize(-dir);
             }
