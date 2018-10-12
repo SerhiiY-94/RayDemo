@@ -60,7 +60,7 @@ namespace GSHDRTestInternal {
     // l - band in range [0..N]
     // m in range [-l..l]
     // theta in range [0..Pi]
-    // phi in range [0..2*Pi]
+    // phi in range [0..2 * Pi]
     double SH_Evaluate(int l, int m, double theta, double phi) {
         const double sqrt2 = std::sqrt(2.0);
         if (m == 0) {
