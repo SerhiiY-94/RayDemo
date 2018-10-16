@@ -21,7 +21,7 @@
 #include "../ui/FontStorage.h"
 
 namespace GSRayTestInternal {
-const float FORWARD_SPEED = 1.0f;
+const float FORWARD_SPEED = 8.0f;
 }
 
 GSRayTest::GSRayTest(GameBase *game) : game_(game) {
