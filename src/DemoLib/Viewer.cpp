@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include <Eng/GameStateManager.h>
-#include <ray/RendererFactory.h>
+#include <Ray/RendererFactory.h>
 #include <Ren/Context.h>
 #include <Sys/AssetFile.h>
 #include <Sys/Json.h>
