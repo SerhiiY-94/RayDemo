@@ -1,6 +1,7 @@
 #include "GSHDRTest.h"
 
 #include <fstream>
+#include <random>
 #include <sstream>
 
 #if defined(USE_SW_RENDER)
@@ -21,6 +22,8 @@
 #include "../ui/FontStorage.h"
 
 namespace GSHDRTestInternal {
+    const double Pi = 3.1415926535897932384626433832795;
+
     double LegendrePolynomial(int l, int m, double x) {
         double pmm = 1.0;
         if (m > 0) {
@@ -52,7 +55,6 @@ namespace GSHDRTestInternal {
     }
 
     double SH_RenormConstant(int l, int m) {
-        const double Pi = 3.1415926535897932384626433832795;
         double temp = ((2.0 * l + 1.0) * factorial(l - m)) / (4.0 * Pi * factorial(l + m));
         return std::sqrt(temp);
     }
@@ -70,6 +72,62 @@ namespace GSHDRTestInternal {
         } else {
             return sqrt2 * SH_RenormConstant(l, -m) * std::sin(-m * phi) * LegendrePolynomial(l, -m, std::cos(theta));
         }
+    }
+
+    template <int bands_count, typename T>
+    void SH_Project(T &&fn, int sample_count, double result[]) {
+        const int coeff_count = bands_count * bands_count;
+        
+        std::random_device rd;
+        std::mt19937 gen{ rd() };
+        std::uniform_real_distribution<> dist_pos_norm{ 0.0, 1.0 };
+
+        for (int n = 0; n < coeff_count; n++) {
+            result[n] = 0.0;
+        }
+
+        for (int i = 0; i < sample_count; i++) {
+            double x = dist_pos_norm(gen);
+            double y = dist_pos_norm(gen);
+            
+            double theta = 2.0 * std::acos(std::sqrt(1.0 - x));
+            double phi = 2.0 * Pi * y;
+
+            Ren::Vec3d vec = { std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta) };
+            
+            double coeff[coeff_count];
+
+            for (int l = 0; l < bands_count; l++) {
+                for (int m = -l; m <= l; m++) {
+                    int index = l * (l + 1) + m;
+                    coeff[index] = SH_Evaluate(l, m, theta, phi);
+                }
+            }
+
+            for (int n = 0; n < coeff_count; n++) {
+                result[n] += fn(theta, phi) * coeff[n];
+            }
+        }
+
+        const double weight = 4.0 * Pi;
+        const double factor = weight / sample_count;
+
+        for (int n = 0; n < coeff_count; n++) {
+            result[n] *= factor;
+        }
+    }
+
+    template <int band_count>
+    void SH_ApplyDiffuseConvolution(double coeff[]) {
+        static_assert(band_count == 2, "!");
+
+        const double A0 = Pi / std::sqrt(4 * Pi);
+        const double A1 = std::sqrt(Pi / 3);
+
+        coeff[0] *= A0;
+        coeff[1] *= A1;
+        coeff[2] *= A1;
+        coeff[3] *= A1;
     }
 }
 
@@ -94,7 +152,7 @@ void GSHDRTest::Enter() {
 #endif
     using namespace GSHDRTestInternal;
 
-    img_ = LoadHDR("assets/textures/grace-new.hdr", img_w_, img_h_);
+    img_ = LoadHDR("assets/textures/wells6_hd_low.hdr", img_w_, img_h_);
 }
 
 void GSHDRTest::Exit() {
@@ -118,9 +176,7 @@ void GSHDRTest::Draw(float dt_s) {
     pixels_.resize(width * height * 4);
 
     if (iteration_ == 1) {
-        //std::fill(pixels_.begin(), pixels_.end(), 0.0f);
-
-        for (uint32_t j = 0; j < height; j++) {
+        /*for (uint32_t j = 0; j < height; j++) {
             float v = float(j) / height;
             for (uint32_t i = 0; i < width; i++) {
                 float u = float(i) / width;
@@ -145,6 +201,98 @@ void GSHDRTest::Draw(float dt_s) {
                 pixels_[4 * (j * width + i) + 0] = std::min(r * mul_, 1.0f);
                 pixels_[4 * (j * width + i) + 1] = std::min(g * mul_, 1.0f);
                 pixels_[4 * (j * width + i) + 2] = std::min(b * mul_, 1.0f);
+                pixels_[4 * (j * width + i) + 3] = 1.0f;
+            }
+        }*/
+
+        auto sample_env = [this](double theta, double phi) {
+            const double Pi = 3.1415926535897932384626433832795;
+
+            double u = 0.5 * phi / Pi;
+            double v = theta / Pi;
+            
+            int ii = int(u * img_w_);
+            int jj = int(v * img_h_);
+
+            if (ii > img_w_ - 1) ii = img_w_ - 1;
+            if (jj > img_h_ - 1) jj = img_h_ - 1;
+
+            float r = img_[jj * img_w_ + ii].r / 255.0f;
+            float g = img_[jj * img_w_ + ii].g / 255.0f;
+            float b = img_[jj * img_w_ + ii].b / 255.0f;
+            float e = (float)img_[jj * img_w_ + ii].a;
+
+            float f = std::pow(2.0f, e - 128.0f);
+
+            r *= f;
+            g *= f;
+            b *= f;
+
+            return Vec3f{ r, g, b };
+        };
+
+        auto sample_env_r = [&](double theta, double phi) -> double {
+            return sample_env(theta, phi)[0];
+        };
+
+        auto sample_env_g = [&](double theta, double phi) -> double {
+            return sample_env(theta, phi)[1];
+        };
+
+        auto sample_env_b = [&](double theta, double phi) -> double {
+            return sample_env(theta, phi)[2];
+        };
+
+        auto sample_env2 = [this](double theta, double phi) -> double {
+            const double Pi = 3.1415926535897932384626433832795;
+
+            return std::max(0.0, 5.0 * std::cos(theta) - 4.0) +
+                   std::max(0.0, -4.0 * std::sin(theta - Pi) * std::cos(phi - 2.5) - 3.0);
+        };
+
+        const int bands_count = 2,
+                  coeff_count = bands_count * bands_count;
+
+        const int sample_count = 1024 * 128;
+
+        double sh_result[3][coeff_count];
+
+        //SH_Project<bands_count>(sample_env, sample_count, sh_result);
+
+        SH_Project<bands_count>(sample_env_r, sample_count, sh_result[0]);
+        SH_Project<bands_count>(sample_env_g, sample_count, sh_result[1]);
+        SH_Project<bands_count>(sample_env_b, sample_count, sh_result[2]);
+
+        SH_ApplyDiffuseConvolution<bands_count>(sh_result[0]);
+        SH_ApplyDiffuseConvolution<bands_count>(sh_result[1]);
+        SH_ApplyDiffuseConvolution<bands_count>(sh_result[2]);
+
+        const double Pi = 3.1415926535897932384626433832795;
+
+        for (uint32_t j = 0; j < height; j++) {
+            double theta = Pi * double(j) / height;
+            for (uint32_t i = 0; i < width; i++) {
+                double phi = 2.0 * Pi * double(i) / width;
+
+#if 0
+                float res = (float)sample_env(theta, phi);
+#else
+                auto dres = Vec3d{ 0.0 };
+                for (int l = 0; l < bands_count; l++) {
+                    for (int m = -l; m <= l; m++) {
+                        int index = l * (l + 1) + m;
+                        dres[0] += sh_result[0][index] * SH_Evaluate(l, m, theta, phi);
+                        dres[1] += sh_result[1][index] * SH_Evaluate(l, m, theta, phi);
+                        dres[2] += sh_result[2][index] * SH_Evaluate(l, m, theta, phi);
+                    }
+                }
+
+                auto res = (Vec3f)dres;
+#endif
+
+                pixels_[4 * (j * width + i) + 0] = std::min(std::max(res[0] * mul_, 0.0f), 1.0f);
+                pixels_[4 * (j * width + i) + 1] = std::min(std::max(res[1] * mul_, 0.0f), 1.0f);
+                pixels_[4 * (j * width + i) + 2] = std::min(std::max(res[2] * mul_, 0.0f), 1.0f);
                 pixels_[4 * (j * width + i) + 3] = 1.0f;
             }
         }
