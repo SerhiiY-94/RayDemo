@@ -121,8 +121,8 @@ namespace GSHDRTestInternal {
     }
 
     void SH_EvaluateL1(const Ren::Vec3d &v, double coeff[4]) {
-        double Y0 = std::sqrt(1.0 / (4.0 * Pi));
-        double Y1 = std::sqrt(3.0 / (4.0 * Pi));
+        const double Y0 = std::sqrt(1.0 / (4.0 * Pi));
+        const double Y1 = std::sqrt(3.0 / (4.0 * Pi));
 
         coeff[0] = Y0;
         coeff[1] = Y1 * v[1];
@@ -141,8 +141,8 @@ namespace GSHDRTestInternal {
     }
 
     void SH_EvaluateDiffuseL1(const Ren::Vec3d &v, double coeff[4]) {
-        double AY0 = 0.25;
-        double AY1 = 0.5;
+        const double AY0 = 0.25;
+        const double AY1 = 0.5;
 
         coeff[0] = AY0;
         coeff[1] = AY1 * v[1];
@@ -170,7 +170,7 @@ namespace GSHDRTestInternal {
             Ren::Vec3d vec = { std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta) };
 
             double coeff[4];
-            SH_EvaluateL1(vec, coeff);
+            SH_EvaluateDiffuseL1(vec, coeff);
 
             for (int n = 0; n < 4; n++) {
                 result[n] += fn(theta, phi) * coeff[n];
@@ -314,7 +314,7 @@ void GSHDRTest::Draw(float dt_s) {
 
         //SH_Project<bands_count>(sample_env, sample_count, sh_result);
 
-#if 0
+#if 1
         SH_Project<bands_count>(sample_env_r, sample_count, sh_result[0]);
         SH_Project<bands_count>(sample_env_g, sample_count, sh_result[1]);
         SH_Project<bands_count>(sample_env_b, sample_count, sh_result[2]);
