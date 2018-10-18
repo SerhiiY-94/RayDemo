@@ -139,6 +139,7 @@ void GSLightmapTest::Enter() {
         cam_desc.skip_direct_lighting = true;
         //cam_desc.skip_indirect_lighting = true;
         cam_desc.no_background = true;
+        cam_desc.output_sh = true;
 
         uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
         ray_scene_->set_current_cam(cam_index);

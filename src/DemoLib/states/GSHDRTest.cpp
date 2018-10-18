@@ -314,7 +314,7 @@ void GSHDRTest::Draw(float dt_s) {
 
         //SH_Project<bands_count>(sample_env, sample_count, sh_result);
 
-#if 1
+#if 0
         SH_Project<bands_count>(sample_env_r, sample_count, sh_result[0]);
         SH_Project<bands_count>(sample_env_g, sample_count, sh_result[1]);
         SH_Project<bands_count>(sample_env_b, sample_count, sh_result[2]);
