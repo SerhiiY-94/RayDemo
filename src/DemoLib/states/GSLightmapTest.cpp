@@ -85,7 +85,7 @@ void GSLightmapTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/test_lmap.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/new_scene3.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -122,6 +122,7 @@ void GSLightmapTest::Enter() {
         cam_desc.skip_direct_lighting = true;
         //cam_desc.skip_indirect_lighting = true;
         //cam_desc.no_background = true;
+        cam_desc.output_sh = true;
 
         ray_scene_->SetCamera(0, cam_desc);
 
@@ -132,7 +133,7 @@ void GSLightmapTest::Enter() {
     {   // add camera for lightmapping
         Ray::camera_desc_t cam_desc;
         cam_desc.type = Ray::Geo;
-        cam_desc.mi_index = 0;
+        cam_desc.mi_index = 1;
         cam_desc.uv_index = 0;
         cam_desc.gamma = 2.2f;
         cam_desc.lighting_only = true;
@@ -255,7 +256,54 @@ void GSLightmapTest::Draw(float dt_s) {
     const auto *pixel_data = ray_renderer_->get_pixels_ref();
 
 #if defined(USE_SW_RENDER)
+#if 0
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
+#else
+    const auto *sh_data = ray_renderer_->get_sh_data_ref();
+
+    static std::vector<Ray::pixel_color_t> temp_buf;
+    temp_buf.resize(w * h);
+
+    const float Y0 = std::sqrt(1.0f / (4.0f * Ren::Pi<float>()));
+    const float Y1 = std::sqrt(3.0f / (4.0f * Ren::Pi<float>()));
+
+    const float A0 = Ren::Pi<float>() / std::sqrt(4 * Ren::Pi<float>());
+    const float A1 = std::sqrt(Ren::Pi<float>() / 3);
+
+    const float AY0 = 0.25f;
+    const float AY1 = 0.5f;
+
+    float coeff[4];
+    coeff[0] = AY0;
+    coeff[1] = AY1 * 1.0f;
+    coeff[2] = AY1 * 0.0f;
+    coeff[3] = AY1 * 0.0f;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int i = y * w + x;
+
+            temp_buf[i].r = coeff[0] * sh_data[i].coeff_r[0] + coeff[1] * sh_data[i].coeff_r[1] +
+                coeff[2] * sh_data[i].coeff_r[2] + coeff[3] * sh_data[i].coeff_r[3];
+            temp_buf[i].g = coeff[0] * sh_data[i].coeff_g[0] + coeff[1] * sh_data[i].coeff_g[1] +
+                coeff[2] * sh_data[i].coeff_g[2] + coeff[3] * sh_data[i].coeff_g[3];
+            temp_buf[i].b = coeff[0] * sh_data[i].coeff_b[0] + coeff[1] * sh_data[i].coeff_b[1] +
+                coeff[2] * sh_data[i].coeff_b[2] + coeff[3] * sh_data[i].coeff_b[3];
+            temp_buf[i].a = 1.0f;
+
+            if (temp_buf[i].r < 0.0f) temp_buf[i].r = 0.0f;
+            else if (temp_buf[i].r > 1.0f) temp_buf[i].r = 1.0f;
+
+            if (temp_buf[i].g < 0.0f) temp_buf[i].g = 0.0f;
+            else if (temp_buf[i].g > 1.0f) temp_buf[i].g = 1.0f;
+
+            if (temp_buf[i].b < 0.0f) temp_buf[i].b = 0.0f;
+            else if (temp_buf[i].b > 1.0f) temp_buf[i].b = 1.0f;
+        }
+    }
+
+    swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)temp_buf.data(), 1);
+#endif
 
     uint8_t stat_line[64][3];
     int off_x = 128 - (int)stats_.size();
@@ -432,16 +480,16 @@ void GSLightmapTest::HandleInput(InputManager::Event evt) {
             Mat3f rot_m3 = Mat3f(rot);
 
             if (!view_targeted_) {
-                view_dir_ = view_dir_ * rot_m3;
+                view_dir_ = rot_m3 * view_dir_;
             } else {
                 Vec3f dir = view_origin_ - view_target_;
-                dir = dir * rot_m3;
+                dir = rot_m3 * dir;
                 view_origin_ = view_target_ + dir;
                 view_dir_ = Normalize(-dir);
             }
 
-            LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
-            LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
+            //LOGI("%f %f %f", view_origin_[0], view_origin_[1], view_origin_[2]);
+            //LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
         }
