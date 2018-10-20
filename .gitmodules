@@ -10,6 +10,6 @@
 [submodule "src/Gui"]
 	path = src/Gui
 	url = https://github.com/SerhiiY-94/Gui.git
-[submodule "src/ray"]
-	path = src/ray
+[submodule "src/Ray"]
+	path = src/Ray
 	url = https://github.com/SerhiiY-94/Ray.git
