@@ -85,7 +85,7 @@ void GSLightmapTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/new_scene3.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/test_lmap.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -133,7 +133,7 @@ void GSLightmapTest::Enter() {
     {   // add camera for lightmapping
         Ray::camera_desc_t cam_desc;
         cam_desc.type = Ray::Geo;
-        cam_desc.mi_index = 1;
+        cam_desc.mi_index = 0;
         cam_desc.uv_index = 0;
         cam_desc.gamma = 2.2f;
         cam_desc.lighting_only = true;
@@ -143,7 +143,7 @@ void GSLightmapTest::Enter() {
         cam_desc.output_sh = true;
 
         uint32_t cam_index = ray_scene_->AddCamera(cam_desc);
-        ray_scene_->set_current_cam(cam_index);
+        //ray_scene_->set_current_cam(cam_index);
     }
 
     UpdateRegionContexts();
