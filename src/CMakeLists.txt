@@ -55,7 +55,7 @@ link_directories(${SDL2_LIBRARIES})
 #set(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 enable_testing()
 
-add_subdirectory(ray)
+add_subdirectory(Ray)
 add_subdirectory(Ren)
 add_subdirectory(Sys)
 add_subdirectory(Gui)
