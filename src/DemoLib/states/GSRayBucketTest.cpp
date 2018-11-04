@@ -93,7 +93,7 @@ void GSRayBucketTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
         /*for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
                 auto rect = Ray::rect_t{ x, y, 
@@ -143,7 +143,7 @@ void GSRayBucketTest::UpdateRegionContexts() {
     is_active_.resize(region_contexts_.size(), false);
     is_aborted_.resize(region_contexts_.size(), false);
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
         auto render_job = [this](int i, int m) {
             if (is_aborted_[i]) return;
 

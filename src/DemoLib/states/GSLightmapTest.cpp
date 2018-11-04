@@ -45,7 +45,7 @@ void GSLightmapTest::UpdateRegionContexts() {
     const auto rt = ray_renderer_->type();
     const auto sz = ray_renderer_->size();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
         const int BUCKET_SIZE = 128;
 
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
@@ -202,7 +202,7 @@ void GSLightmapTest::Draw(float dt_s) {
 
     const auto rt = ray_renderer_->type();
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
         auto render_job = [this](int i) { ray_renderer_->RenderScene(ray_scene_, region_contexts_[i]); };
         
         std::vector<std::future<void>> events;
@@ -224,7 +224,7 @@ void GSLightmapTest::Draw(float dt_s) {
 
     //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
 
-    if (rt == Ray::RendererRef || rt == Ray::RendererSSE || rt == Ray::RendererAVX) {
+    if (rt == Ray::RendererRef || rt == Ray::RendererSSE2 || rt == Ray::RendererAVX || rt == Ray::RendererAVX2) {
         st.time_primary_ray_gen_us /= threads_->num_workers();
         st.time_primary_trace_us /= threads_->num_workers();
         st.time_primary_shade_us /= threads_->num_workers();

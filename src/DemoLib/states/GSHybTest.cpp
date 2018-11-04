@@ -37,7 +37,7 @@ GSHybTest::GSHybTest(GameBase *game) : game_(game) {
     Ray::settings_t s;
     s.w = game->width;
     s.h = game->height;
-    cpu_tracer_ = Ray::CreateRenderer(s, Ray::RendererAVX | Ray::RendererSSE | Ray::RendererRef);
+    cpu_tracer_ = Ray::CreateRenderer(s, Ray::RendererAVX2 | Ray::RendererAVX | Ray::RendererSSE2 | Ray::RendererRef);
 
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
 }
