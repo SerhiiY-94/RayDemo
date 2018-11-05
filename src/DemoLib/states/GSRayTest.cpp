@@ -207,7 +207,7 @@ void GSRayTest::Draw(float dt_s) {
     }
 
     //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
-    LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
+    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
 
     stats_.push_back(st);
     if (stats_.size() > 128) {
