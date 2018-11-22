@@ -254,6 +254,22 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 transform = Ren::Translate(transform, { px, py, pz });
             }
 
+            if (js_mesh_instance_obj.Has("rot")) {
+                const JsArray &js_pos = (const JsArray &)js_mesh_instance_obj.at("rot");
+
+                float rx = (float)((const JsNumber &)js_pos.at(0)).val;
+                float ry = (float)((const JsNumber &)js_pos.at(1)).val;
+                float rz = (float)((const JsNumber &)js_pos.at(2)).val;
+
+                rx *= Ren::Pi<float>() / 180.0f;
+                ry *= Ren::Pi<float>() / 180.0f;
+                rz *= Ren::Pi<float>() / 180.0f;
+
+                transform = Ren::Rotate(transform, (float)rz, Ren::Vec3f{ 0.0f, 0.0f, 1.0f });
+                transform = Ren::Rotate(transform, (float)rx, Ren::Vec3f{ 1.0f, 0.0f, 0.0f });
+                transform = Ren::Rotate(transform, (float)ry, Ren::Vec3f{ 0.0f, 1.0f, 0.0f });
+            }
+
             uint32_t mesh_index = meshes.at(js_mesh_name.val);
             new_scene->AddMeshInstance(mesh_index, Ren::ValuePtr(transform));
         }
