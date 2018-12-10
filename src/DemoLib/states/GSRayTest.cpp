@@ -164,12 +164,23 @@ void GSRayTest::Draw(float dt_s) {
         cam_desc.focus_distance = focal_distance_;
         cam_desc.focus_factor = 0.0f;
 
+        if (invalidate_preview_) {
+            cam_desc.max_total_depth = 1;
+            last_invalidate_ = true;
+        } else {
+            cam_desc.max_total_depth = 4;
+            if (last_invalidate_) {
+                invalidate_preview_ = true;
+                last_invalidate_ = false;
+            }
+        }
+
         ray_scene_->SetCamera(0, cam_desc);
     }
 
     auto t1 = Sys::GetTicks();
 
-    if (invalidate_preview_) {
+    if (invalidate_preview_ || last_invalidate_) {
         ray_renderer_->Clear();
         UpdateRegionContexts();
         invalidate_preview_ = false;
@@ -207,7 +218,8 @@ void GSRayTest::Draw(float dt_s) {
     }
 
     //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_secondary_trace_us, region_contexts_[0].iteration);
-    //LOGI("%llu\t%llu\t%i", st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
+    LOGI("%llu\t%llu\t%llu\t%i", st.time_primary_ray_gen_us, st.time_primary_trace_us, st.time_primary_shade_us, region_contexts_[0].iteration);
+    //LOGI("%llu\t%llu", st.time_secondary_sort_us, st.time_secondary_trace_us);
 
     stats_.push_back(st);
     if (stats_.size() > 128) {
@@ -353,7 +365,12 @@ void GSRayTest::Update(int dt_ms) {
     view_origin_ += view_dir_ * forward_speed_;
     view_origin_ += side * side_speed_;
 
+    invalidate_timeout_ -= dt_ms;
+
     if (forward_speed_ != 0 || side_speed_ != 0 || animate_) {
+        invalidate_preview_ = true;
+        invalidate_timeout_ = 100;
+    } else if (invalidate_timeout_ > 0) {
         invalidate_preview_ = true;
     }
 
@@ -421,12 +438,14 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
             LOGI("%f %f %f", view_dir_[0], view_dir_[1], view_dir_[2]);
 
             invalidate_preview_ = true;
+            invalidate_timeout_ = 100;
         }
         break;
     case InputManager::RAW_INPUT_MOUSE_WHEEL:
         focal_distance_ += evt.move.dy;
         LOGI("focal distance = %f", focal_distance_);
         invalidate_preview_ = true;
+        invalidate_timeout_ = 100;
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {
         if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {
