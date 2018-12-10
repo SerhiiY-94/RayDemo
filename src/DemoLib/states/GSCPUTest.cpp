@@ -15,8 +15,8 @@
 #include <Sys/ThreadPool.h>
 #include <Gui/Renderer.h>
 
-#include <ray/internal/Core.h>
-#include <ray/internal/Halton.h>
+#include <Ray/internal/Core.h>
+#include <Ray/internal/Halton.h>
 
 #include "../Viewer.h"
 #include "../ui/FontStorage.h"

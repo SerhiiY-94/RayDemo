@@ -5,8 +5,8 @@
 #include <tuple>
 #include <vector>
 
-#include <ray/RendererBase.h>
-#include <ray/Types.h>
+#include <Ray/RendererBase.h>
+#include <Ray/Types.h>
 #include <Sys/Json.h>
 
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene);

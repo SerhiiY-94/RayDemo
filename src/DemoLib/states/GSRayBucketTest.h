@@ -10,7 +10,7 @@
 #include <Ren/Program.h>
 #include <Ren/Texture.h>
 
-#include <ray/RendererBase.h>
+#include <Ray/RendererBase.h>
 
 class GameBase;
 class GameStateManager;
