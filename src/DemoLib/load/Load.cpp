@@ -20,7 +20,9 @@
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene) {
     auto new_scene = r->CreateScene();
 
-    Ren::Vec3f view_origin, view_dir = { 0, 0, -1 };
+    bool view_targeted = false;
+    Ren::Vec3f view_origin, view_dir = { 0, 0, -1 }, view_target;
+    float view_fov = 45.0f;
 
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
@@ -71,6 +73,22 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 view_dir[0] = (float)((const JsNumber &)js_view_dir.at(0)).val;
                 view_dir[1] = (float)((const JsNumber &)js_view_dir.at(1)).val;
                 view_dir[2] = (float)((const JsNumber &)js_view_dir.at(2)).val;
+            }
+
+            if (js_cam.Has("view_target")) {
+                const JsArray &js_view_target = (const JsArray &)js_cam.at("view_target");
+
+                view_target[0] = (float)((const JsNumber &)js_view_target.at(0)).val;
+                view_target[1] = (float)((const JsNumber &)js_view_target.at(1)).val;
+                view_target[2] = (float)((const JsNumber &)js_view_target.at(2)).val;
+
+                view_targeted = true;
+            }
+
+            if (js_cam.Has("fov")) {
+                const JsNumber &js_view_fov = js_cam.at("fov");
+
+                view_fov = (float)js_view_fov.val;
             }
         }
 
@@ -160,9 +178,14 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 mat_desc.fresnel = (float)js_fresnel.val;
             }
 
-            if (js_mat_obj.Has("ior")) {
-                const JsNumber &js_ior = js_mat_obj.at("ior");
-                mat_desc.ior = (float)js_ior.val;
+            if (js_mat_obj.Has("int_ior")) {
+                const JsNumber &js_int_ior = js_mat_obj.at("int_ior");
+                mat_desc.int_ior = (float)js_int_ior.val;
+            }
+
+            if (js_mat_obj.Has("ext_ior")) {
+                const JsNumber &js_ext_ior = js_mat_obj.at("ext_ior");
+                mat_desc.ext_ior = (float)js_ext_ior.val;
             }
 
             if (js_type.val == "diffuse") {
@@ -226,7 +249,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             for (size_t i = 0; i < groups.size(); i += 2) {
                 const JsString &js_mat_name = js_materials.at(i / 2);
                 uint32_t mat_index = materials.at(js_mat_name.val);
-                mesh_desc.shapes.push_back({ mat_index, groups[i], groups[i + 1] });
+                mesh_desc.shapes.push_back({ mat_index, mat_index, groups[i], groups[i + 1] });
             }
 
             if (js_mesh_obj.Has("allow_spatial_splits")) {
@@ -278,12 +301,17 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         return nullptr;
     }
 
+    if (view_targeted) {
+        Ren::Vec3f dir = view_origin - view_target;
+        view_dir = Normalize(-dir);
+    }
+
     Ray::camera_desc_t cam_desc;
     cam_desc.type = Ray::Persp;
     cam_desc.filter = Ray::Tent;
     memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin), 3 * sizeof(float));
     memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir), 3 * sizeof(float));
-    cam_desc.fov = 45.0f;
+    cam_desc.fov = view_fov;
     cam_desc.gamma = 2.2f;
     cam_desc.focus_distance = 1.0f;
     cam_desc.focus_factor = 0.0f;
