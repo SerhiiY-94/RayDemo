@@ -85,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/coffee.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/staircase.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
