@@ -168,8 +168,7 @@ void GSRayTest::Draw(float dt_s) {
             cam_desc.max_total_depth = 1;
             last_invalidate_ = true;
         } else {
-            cam_desc.max_refr_depth = 8;
-            cam_desc.max_total_depth = 8;
+            cam_desc.max_total_depth = 4;
             if (last_invalidate_) {
                 invalidate_preview_ = true;
                 last_invalidate_ = false;
