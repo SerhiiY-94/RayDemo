@@ -492,7 +492,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 
     groups.push_back((uint32_t)(indices.size() - groups.back()));
 
-#if 1
+#if 0
     {
         std::string out_file_name = file_name;
         out_file_name[out_file_name.size() - 3] = 'r';
