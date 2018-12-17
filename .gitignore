@@ -1,6 +1,5 @@
 .dumps
 build-*
-src/libs
 assets/textures/inter*
 assets/textures/sponza*
 check*
