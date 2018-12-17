@@ -30,7 +30,6 @@ init:
     - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
 
 before_build:
-    - python download.py
     - mkdir build
     - cd build
     - cmake .. -G %generator%
@@ -43,6 +42,12 @@ after_build:
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoApp.exe
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoLib.dll
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip assets
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_coffee_cpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_coffee_gpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_sponza_cpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_sponza_gpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_staircase_cpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_staircase_gpu.bat
     
 test_script:
     - build\src\Eng\tests\%CONFIGURATION%\test_Eng
