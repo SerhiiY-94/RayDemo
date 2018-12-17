@@ -11,7 +11,7 @@
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
-Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) {
+Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, bool nogpu) : GameBase(w, h, local_dir) {
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
     JsObject main_config;
@@ -53,11 +53,24 @@ Viewer::Viewer(int w, int h, const char *local_dir) : GameBase(w, h, local_dir) 
     }
 
     {
+        auto scene_name = std::make_shared<std::string>(_scene_name);
+        AddComponent(SCENE_NAME_KEY, scene_name);
+    }
+
+    {
         // create ray renderer
         Ray::settings_t s;
         s.w = w;
         s.h = h;
-        auto ray_renderer = Ray::CreateRenderer(s, Ray::RendererOCL);
+
+        std::shared_ptr<Ray::RendererBase> ray_renderer;
+
+        if (nogpu) {
+            ray_renderer = Ray::CreateRenderer(s, Ray::RendererRef | Ray::RendererSSE2 | Ray::RendererAVX | Ray::RendererAVX2);
+        } else {
+            ray_renderer = Ray::CreateRenderer(s);
+        }
+
         AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
 

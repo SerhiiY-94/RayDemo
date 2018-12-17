@@ -42,7 +42,7 @@ DemoApp::~DemoApp() {
 
 }
 
-int DemoApp::Init(int w, int h) {
+int DemoApp::Init(int w, int h, const char *scene_name, bool nogpu) {
 #if !defined(__ANDROID__)
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return -1;
@@ -95,7 +95,7 @@ int DemoApp::Init(int w, int h) {
 #endif
 #endif
     try {
-        LoadLib(w, h);
+        LoadLib(w, h, scene_name, nogpu);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -120,29 +120,31 @@ void DemoApp::Destroy() {
 }
 
 void DemoApp::Frame() {
-    //R::ClearColorAndDepth(0.1f, 0.75f, 0.75f, 1);
     viewer_->Frame();
 }
 
 #if !defined(__ANDROID__)
 int DemoApp::Run(const std::vector<std::string> &args) {
-#if defined(__EMSCRIPTEN__)
-    const int w = 1024;
-    const int h = 576;
-    //const int w = 640;  const int h = 360;
-#else
-    //const int w = 640;  const int h = 360;
-    //const int w = 1024;  const int h = 1024;
-    //const int w = 1280; const int h = 720;
-    //const int w = 1920; const int h = 1080;
-    const int w = 400; const int h = 500;
-#endif
 
-    if (Init(w, h) < 0) {
-        return -1;
+    int w = 640, h = 360;
+    scene_name_ = "assets/scenes/sponza_simple.json";
+    nogpu_ = false;
+
+    for (size_t i = 0; i < args.size(); i++) {
+        if (args[i] == "-w" && (++i != args.size())) {
+            w = atoi(args[i].c_str());
+        } else if (args[i] == "-h" && (++i != args.size())) {
+            h = atoi(args[i].c_str());
+        } else if ((args[i] == "-scene" || args[i] == "-s") && (++i != args.size())) {
+            scene_name_ = args[i];
+        } else if (args[i] == "-nogpu") {
+            nogpu_ = true;
+        }
     }
 
-    std::vector<uint8_t> u8_pixel_data(w * h * 4);
+    if (Init(w, h, scene_name_.c_str(), nogpu_) < 0) {
+        return -1;
+    }
 
 #if defined(__EMSCRIPTEN__)
     emscripten_set_main_loop([]() {
@@ -239,7 +241,7 @@ void DemoApp::PollEvents() {
         case SDL_KEYUP:
             if (e.key.keysym.sym == SDLK_F5) {
                 input_manager = nullptr;
-                LoadLib(0, 0);
+                LoadLib(0, 0, scene_name_.c_str(), nogpu_);
                 return;
             } else if (ConvertToRawButton(e.key.keysym.sym, button)) {
                 evt.type = InputManager::RAW_INPUT_KEY_UP;
@@ -322,7 +324,7 @@ void DemoApp::PollEvents() {
 
 #endif
 
-void DemoApp::LoadLib(int w, int h) {
+void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
@@ -332,7 +334,7 @@ void DemoApp::LoadLib(int w, int h) {
 
     demo_lib_ = {};
 #if defined(WIN32)
-    GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
+    GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir, const char *scene_name, int nogpu) = nullptr;
 
     system("copy \"DemoLib.dll\" \"DemoLib_.dll\"");
     demo_lib_ = Sys::DynLib{ "DemoLib_.dll" };
@@ -349,6 +351,6 @@ void DemoApp::LoadLib(int w, int h) {
     }
 
 	if (p_create_viewer) {
-		viewer_.reset(p_create_viewer(w, h, "./"));
+		viewer_.reset(p_create_viewer(w, h, "./", scene_name, nogpu ? 1 : 0));
 	}
 }

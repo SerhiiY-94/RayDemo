@@ -1,0 +1,1 @@
+DemoApp.exe -scene assets/scenes/sponza_simple.json -nogpu

@@ -1,7 +1,5 @@
 .dumps
 build-*
-assets/textures/inter*
-assets/textures/sponza*
 check*
 DemoApp.exe
 DemoLib.dll

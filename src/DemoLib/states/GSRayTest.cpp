@@ -84,8 +84,10 @@ void GSRayTest::Enter() {
 
     JsObject js_scene;
 
+    auto scene_name = game_->GetComponent<std::string>(SCENE_NAME_KEY);
+
     { 
-        std::ifstream in_file("./assets/scenes/staircase.json", std::ios::binary);
+        std::ifstream in_file(*scene_name, std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -153,8 +155,6 @@ void GSRayTest::Exit() {
 }
 
 void GSRayTest::Draw(float dt_s) {
-    //renderer_->ClearColorAndDepth(0, 0, 0, 1);
-
     {   // update camera
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(0, cam_desc);
@@ -169,7 +169,7 @@ void GSRayTest::Draw(float dt_s) {
             last_invalidate_ = true;
         } else {
             cam_desc.max_refr_depth = 9;
-            cam_desc.max_total_depth = 8;
+            cam_desc.max_total_depth = 9;
             if (last_invalidate_) {
                 invalidate_preview_ = true;
                 last_invalidate_ = false;
@@ -247,53 +247,55 @@ void GSRayTest::Draw(float dt_s) {
 #if defined(USE_SW_RENDER)
     swBlitPixels(0, 0, 0, SW_FLOAT, SW_FRGBA, w, h, (const void *)pixel_data, 1);
 
-    uint8_t stat_line[64][3];
-    int off_x = 128 - (int)stats_.size();
+    if (ui_enabled_) {
+        uint8_t stat_line[64][3];
+        int off_x = 128 - (int)stats_.size();
 
-    for (const auto &st : stats_) {
-        int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
-        int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us + 
-                                  st.time_secondary_shade_us) / time_total);
-        int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us + 
-                                  st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
-        int p5 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
-                                  st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+        for (const auto &st : stats_) {
+            int p0 = (int)(64 * float(st.time_secondary_shade_us) / time_total);
+            int p1 = (int)(64 * float(st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+            int p2 = (int)(64 * float(st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+            int p3 = (int)(64 * float(st.time_primary_shade_us + st.time_secondary_sort_us + st.time_secondary_trace_us +
+                st.time_secondary_shade_us) / time_total);
+            int p4 = (int)(64 * float(st.time_primary_trace_us + st.time_primary_shade_us + st.time_secondary_sort_us +
+                st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
+            int p5 = (int)(64 * float(st.time_primary_ray_gen_us + st.time_primary_trace_us + st.time_primary_shade_us +
+                st.time_secondary_sort_us + st.time_secondary_trace_us + st.time_secondary_shade_us) / time_total);
 
-        int l = p5;
+            int l = p5;
 
-        for (int i = 0; i < p0; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 255;
+            for (int i = 0; i < p0; i++) {
+                stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 255;
+            }
+
+            for (int i = p0; i < p1; i++) {
+                stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 255;
+            }
+
+            for (int i = p1; i < p2; i++) {
+                stat_line[i][0] = 255; stat_line[i][1] = 255; stat_line[i][2] = 0;
+            }
+
+            for (int i = p2; i < p3; i++) {
+                stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
+            }
+
+            for (int i = p3; i < p4; i++) {
+                stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
+            }
+
+            for (int i = p4; i < p5; i++) {
+                stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
+            }
+
+            swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+            off_x++;
         }
 
-        for (int i = p0; i < p1; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 255;
-        }
-
-        for (int i = p1; i < p2; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 255; stat_line[i][2] = 0;
-        }
-
-        for (int i = p2; i < p3; i++) {
-            stat_line[i][0] = 255; stat_line[i][1] = 0; stat_line[i][2] = 0;
-        }
-
-        for (int i = p3; i < p4; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 255; stat_line[i][2] = 0;
-        }
-
-        for (int i = p4; i < p5; i++) {
-            stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
-        }
-
-        //swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
-        off_x++;
+        uint8_t hor_line[128][3];
+        memset(&hor_line[0][0], 255, sizeof(hor_line));
+        swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
     }
-
-    uint8_t hor_line[128][3];
-    memset(&hor_line[0][0], 255, sizeof(hor_line));
-    //swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
     auto dt_ms = int(Sys::GetTicks() - t1);
@@ -306,8 +308,7 @@ void GSRayTest::Draw(float dt_s) {
         time_counter_ = 0;
     }
 
-    /*{
-        // ui draw
+    if (ui_enabled_) {
         ui_renderer_->BeginDraw();
 
         Ray::RendererBase::stats_t st = {};
@@ -350,7 +351,7 @@ void GSRayTest::Draw(float dt_s) {
         font_->DrawText(ui_renderer_.get(), stats6.c_str(), { -1 + 2 * 135.0f/w, 1 - 2 * 4.0f/h - font_height }, ui_root_.get());
 
         ui_renderer_->EndDraw();
-    }*/
+    }
 
     ctx_->ProcessTasks();
 }
@@ -485,6 +486,8 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
             side_speed_ = 0;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT) {
             side_speed_ = 0;
+        } else if (evt.raw_key == 'u') {
+            ui_enabled_ = !ui_enabled_;
         }
     }
     break;

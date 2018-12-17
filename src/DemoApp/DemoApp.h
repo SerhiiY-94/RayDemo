@@ -22,6 +22,9 @@ class DemoApp {
 #endif
     SDL_Window		*window_ = nullptr;
 
+    std::string     scene_name_;
+    bool            nogpu_;
+
     Sys::DynLib		demo_lib_;
     const void *(*p_get_renderer_pixels_)(GameBase *);
 
@@ -34,12 +37,12 @@ class DemoApp {
 
     std::unique_ptr<GameBase> viewer_;
 
-    void LoadLib(int w, int h);
+    void LoadLib(int w, int h, const char *scene_name, bool nogpu);
 public:
     DemoApp();
     ~DemoApp();
 
-    int Init(int w, int h);
+    int Init(int w, int h, const char *scene_name, bool nogpu);
     void Destroy();
 
     void Frame();
