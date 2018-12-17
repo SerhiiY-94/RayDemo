@@ -85,7 +85,7 @@ void GSRayTest::Enter() {
     JsObject js_scene;
 
     { 
-        std::ifstream in_file("./assets/scenes/coffee.json", std::ios::binary);
+        std::ifstream in_file("./assets/scenes/staircase.json", std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -169,7 +169,7 @@ void GSRayTest::Draw(float dt_s) {
             last_invalidate_ = true;
         } else {
             cam_desc.max_refr_depth = 9;
-            cam_desc.max_total_depth = 9;
+            cam_desc.max_total_depth = 8;
             if (last_invalidate_) {
                 invalidate_preview_ = true;
                 last_invalidate_ = false;
@@ -287,13 +287,13 @@ void GSRayTest::Draw(float dt_s) {
             stat_line[i][0] = 0; stat_line[i][1] = 0; stat_line[i][2] = 255;
         }
 
-        swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
+        //swBlitPixels(180 + off_x, 4 + (64 - l), 0, SW_UNSIGNED_BYTE, SW_RGB, 1, l, &stat_line[0][0], 1);
         off_x++;
     }
 
     uint8_t hor_line[128][3];
     memset(&hor_line[0][0], 255, sizeof(hor_line));
-    swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
+    //swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
     auto dt_ms = int(Sys::GetTicks() - t1);
@@ -306,7 +306,7 @@ void GSRayTest::Draw(float dt_s) {
         time_counter_ = 0;
     }
 
-    {
+    /*{
         // ui draw
         ui_renderer_->BeginDraw();
 
@@ -350,7 +350,7 @@ void GSRayTest::Draw(float dt_s) {
         font_->DrawText(ui_renderer_.get(), stats6.c_str(), { -1 + 2 * 135.0f/w, 1 - 2 * 4.0f/h - font_height }, ui_root_.get());
 
         ui_renderer_->EndDraw();
-    }
+    }*/
 
     ctx_->ProcessTasks();
 }
