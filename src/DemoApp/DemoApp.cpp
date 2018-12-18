@@ -42,7 +42,7 @@ DemoApp::~DemoApp() {
 
 }
 
-int DemoApp::Init(int w, int h, const char *scene_name, bool nogpu) {
+int DemoApp::Init(int w, int h, const char *scene_name, bool nogpu, bool copy_lib) {
 #if !defined(__ANDROID__)
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return -1;
@@ -95,7 +95,7 @@ int DemoApp::Init(int w, int h, const char *scene_name, bool nogpu) {
 #endif
 #endif
     try {
-        LoadLib(w, h, scene_name, nogpu);
+        LoadLib(w, h, scene_name, nogpu, copy_lib);
     } catch (std::exception &e) {
         fprintf(stderr, "%s", e.what());
         return -1;
@@ -129,6 +129,7 @@ int DemoApp::Run(const std::vector<std::string> &args) {
     int w = 640, h = 360;
     scene_name_ = "assets/scenes/sponza_simple.json";
     nogpu_ = false;
+    copy_lib_ = false;
 
     for (size_t i = 0; i < args.size(); i++) {
         if (args[i] == "-w" && (++i != args.size())) {
@@ -139,10 +140,12 @@ int DemoApp::Run(const std::vector<std::string> &args) {
             scene_name_ = args[i];
         } else if (args[i] == "-nogpu") {
             nogpu_ = true;
+        } else if (args[i] == "-copy_lib") {
+            copy_lib_ = true;
         }
     }
 
-    if (Init(w, h, scene_name_.c_str(), nogpu_) < 0) {
+    if (Init(w, h, scene_name_.c_str(), nogpu_, copy_lib_) < 0) {
         return -1;
     }
 
@@ -241,7 +244,7 @@ void DemoApp::PollEvents() {
         case SDL_KEYUP:
             if (e.key.keysym.sym == SDLK_F5) {
                 input_manager = nullptr;
-                LoadLib(0, 0, scene_name_.c_str(), nogpu_);
+                LoadLib(0, 0, scene_name_.c_str(), nogpu_, true);
                 return;
             } else if (ConvertToRawButton(e.key.keysym.sym, button)) {
                 evt.type = InputManager::RAW_INPUT_KEY_UP;
@@ -324,7 +327,7 @@ void DemoApp::PollEvents() {
 
 #endif
 
-void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu) {
+void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu, bool copy_lib) {
     if (viewer_) {
         w = viewer_->width;
         h = viewer_->height;
@@ -336,13 +339,21 @@ void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu) {
 #if defined(WIN32)
     GameBase * (__cdecl *p_create_viewer)(int w, int h, const char *local_dir, const char *scene_name, int nogpu) = nullptr;
 
-    system("copy \"DemoLib.dll\" \"DemoLib_.dll\"");
-    demo_lib_ = Sys::DynLib{ "DemoLib_.dll" };
+    if (copy_lib) {
+        system("copy \"DemoLib.dll\" \"DemoLib_.dll\"");
+        demo_lib_ = Sys::DynLib{ "DemoLib_.dll" };
+    } else {
+        demo_lib_ = Sys::DynLib{ "DemoLib.dll" };
+    }
 #else
-    GameBase * ( *p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
+    GameBase * (*p_create_viewer)(int w, int h, const char *local_dir) = nullptr;
 
-    if (system(R"(cp "DemoLib.so" "DemoLib_.so")") == -1) LOGE("system call failed");
-    demo_lib_ = Sys::DynLib{ "./DemoLib_.so" };
+    if (copy_lib) {
+        if (system(R"(cp "DemoLib.so" "DemoLib_.so")") == -1) LOGE("system call failed");
+        demo_lib_ = Sys::DynLib{ "./DemoLib_.so" };
+    } else {
+        demo_lib_ = Sys::DynLib{ "./DemoLib.so" };
+    }
 #endif
 
     if (demo_lib_) {
