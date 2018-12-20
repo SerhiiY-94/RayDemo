@@ -257,6 +257,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 mesh_desc.allow_spatial_splits = (splits.val == JS_TRUE);
             }
 
+            if (js_mesh_obj.Has("use_fast_bvh_build")) {
+                JsLiteral use_fast = (JsLiteral)js_mesh_obj.at("use_fast_bvh_build");
+                mesh_desc.use_fast_bvh_build = (use_fast.val == JS_TRUE);
+            }
+
             meshes[js_mesh_name.val] = new_scene->AddMesh(mesh_desc);
         }
 
@@ -386,6 +391,20 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
         l_desc.color[2] = 5.75f;
         new_scene->AddLight(l_desc);*/
     }
+
+    /*{
+        std::random_device rd;
+        std::mt19937 mt{};// (rd());
+        std::uniform_real_distribution<float> norm_float_dist(0.0f, 1.0f);
+
+        for (int i = 0; i < 0; i++) {
+            Ren::Mat4f transform;
+
+            transform = Ren::Translate(transform, { norm_float_dist(mt) * 200.0f, norm_float_dist(mt) * 200.0f, norm_float_dist(mt) * 200.0f });
+
+            new_scene->AddMeshInstance(0, Ren::ValuePtr(transform));
+        }
+    }*/
 
     return new_scene;
 }
