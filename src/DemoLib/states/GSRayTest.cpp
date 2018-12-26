@@ -50,7 +50,7 @@ void GSRayTest::UpdateRegionContexts() {
 
         for (int y = 0; y < sz.second; y += BUCKET_SIZE) {
             for (int x = 0; x < sz.first; x += BUCKET_SIZE) {
-                auto rect = Ray::rect_t{ x, y, 
+                auto rect = Ray::rect_t{ x, y,
                     std::min(sz.first - x, BUCKET_SIZE),
                     std::min(sz.second - y, BUCKET_SIZE) };
 
