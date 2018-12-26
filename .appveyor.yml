@@ -42,6 +42,8 @@ after_build:
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoApp.exe
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip DemoLib.dll
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip assets
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_bathroom_cpu.bat
+    - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_bathroom_gpu.bat
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_coffee_cpu.bat
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_coffee_gpu.bat
     - 7z a demo_app_%APPVEYOR_BUILD_VERSION%.zip run_sponza_cpu.bat
