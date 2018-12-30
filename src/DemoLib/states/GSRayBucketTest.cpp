@@ -26,7 +26,7 @@ namespace GSRayBucketTestInternal {
 const float FORWARD_SPEED = 8.0f;
 const int BUCKET_SIZE = 48;
 const int PASSES = 1;
-const int SPP_PORTION = 32;
+const int SPP_PORTION = 256;
 
 // From wikipedia page about Hilbert curve
 
@@ -199,8 +199,10 @@ void GSRayBucketTest::Enter() {
 
     JsObject js_scene;
 
+    auto scene_name = game_->GetComponent<std::string>(SCENE_NAME_KEY);
+
     {
-        std::ifstream in_file("./assets/scenes/sponza_simple.json", std::ios::binary);
+        std::ifstream in_file(*scene_name, std::ios::binary);
         if (!js_scene.Read(in_file)) {
             LOGE("Failed to parse scene file!");
         }
@@ -247,6 +249,9 @@ void GSRayBucketTest::Draw(float dt_s) {
 
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
+
+        cam_desc.max_refr_depth = 8;
+        cam_desc.max_total_depth = 8;
 
         ray_scene_->SetCamera(0, cam_desc);
     }
@@ -319,8 +324,8 @@ void GSRayBucketTest::Draw(float dt_s) {
         auto result = game_->GetComponent<double>(TEST_RESULT_KEY);
         *result = dt.count();
 
-        auto sm = state_manager_.lock();
-        sm->PopLater();
+        //auto sm = state_manager_.lock();
+        //sm->PopLater();
     }
 
     auto dt_ms = int(Sys::GetTicks() - t1);
@@ -333,7 +338,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         time_counter_ = 0;
     }
 
-#if 1
+#if 0
     {
         // ui draw
         ui_renderer_->BeginDraw();
