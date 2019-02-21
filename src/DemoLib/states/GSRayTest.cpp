@@ -422,8 +422,8 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
             up = Cross(side, view_dir_);
 
             Mat4f rot;
-            rot = Rotate(rot, 0.01f * evt.move.dx, up);
-            rot = Rotate(rot, 0.01f * evt.move.dy, side);
+            rot = Rotate(rot, -0.01f * evt.move.dx, up);
+            rot = Rotate(rot, -0.01f * evt.move.dy, side);
 
             Mat3f rot_m3 = Mat3f(rot);
 
