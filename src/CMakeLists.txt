@@ -83,14 +83,14 @@ set_target_properties(test_Eng
                       test_Gui PROPERTIES FOLDER Tests)
 
 add_test(EngTest     	Eng/tests/test_Eng)
-add_test(RayTest        ray/tests/test_ray)
+add_test(RayTest        ray/tests/test_Ray)
 add_test(RenTest        Ren/tests/test_Ren)
 add_test(SWTest         Ren/SW/tests/test_SW)
 add_test(SysTest        Sys/tests/test_Sys)
 add_test(GuiTest        Gui/tests/test_Gui)
 
 add_custom_target(Check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_Eng
-                                                               test_ray
+                                                               test_Ray
                                                                test_Ren
                                                                test_SW
                                                                test_Sys
