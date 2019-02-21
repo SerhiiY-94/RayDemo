@@ -143,7 +143,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
         const JsObject &js_materials = js_scene.at("materials");
         for (const auto &js_mat : js_materials.elements) {
-            const JsString &js_mat_name = js_mat.first;
+            const std::string &js_mat_name = js_mat.first;
             const JsObject &js_mat_obj = js_mat.second;
 
             Ray::mat_desc_t mat_desc;
@@ -216,12 +216,12 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 throw std::runtime_error("unknown material type");
             }
 
-            materials[js_mat_name.val] = new_scene->AddMaterial(mat_desc);
+            materials[js_mat_name] = new_scene->AddMaterial(mat_desc);
         }
 
         const JsObject &js_meshes = js_scene.at("meshes");
         for (const auto &js_mesh : js_meshes.elements) {
-            const JsString &js_mesh_name = js_mesh.first;
+            const std::string &js_mesh_name = js_mesh.first;
             const JsObject &js_mesh_obj = js_mesh.second;
 
             std::vector<float> attrs;
@@ -262,7 +262,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 mesh_desc.use_fast_bvh_build = (use_fast.val == JS_TRUE);
             }
 
-            meshes[js_mesh_name.val] = new_scene->AddMesh(mesh_desc);
+            meshes[js_mesh_name] = new_scene->AddMesh(mesh_desc);
         }
 
         const JsArray &js_mesh_instances = js_scene.at("mesh_instances");
