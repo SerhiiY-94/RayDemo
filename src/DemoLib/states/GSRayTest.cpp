@@ -37,6 +37,8 @@ GSRayTest::GSRayTest(GameBase *game) : game_(game) {
     ray_renderer_   = game->GetComponent<Ray::RendererBase>(RAY_RENDERER_KEY);
 
     threads_        = game->GetComponent<Sys::ThreadPool>(THREAD_POOL_KEY);
+
+    use_coherent_sampling_ = ((Viewer *)game)->use_coherent_sampling;
 }
 
 void GSRayTest::UpdateRegionContexts() {
@@ -164,7 +166,7 @@ void GSRayTest::Draw(float dt_s) {
         cam_desc.focus_distance = focal_distance_;
         cam_desc.focus_factor = 0.0f;
 
-        if (invalidate_preview_) {
+        if (invalidate_preview_ || false) {
             cam_desc.max_total_depth = 1;
             last_invalidate_ = true;
         } else {
@@ -175,6 +177,8 @@ void GSRayTest::Draw(float dt_s) {
                 last_invalidate_ = false;
             }
         }
+
+        cam_desc.use_coherent_sampling = use_coherent_sampling_;
 
         ray_scene_->SetCamera(0, cam_desc);
     }
@@ -450,13 +454,13 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
         invalidate_timeout_ = 100;
         break;
     case InputManager::RAW_INPUT_KEY_DOWN: {
-        if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {
+        if (evt.key == InputManager::RAW_INPUT_BUTTON_UP || evt.raw_key == 'w') {
             forward_speed_ = max_fwd_speed_;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_DOWN) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_DOWN || evt.raw_key == 's') {
             forward_speed_ = -max_fwd_speed_;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_LEFT) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_LEFT || evt.raw_key == 'a') {
             side_speed_ = -max_fwd_speed_;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT || evt.raw_key == 'd') {
             side_speed_ = max_fwd_speed_;
         } else if (evt.key == InputManager::RAW_INPUT_BUTTON_SPACE) {
             animate_ = !animate_;
@@ -478,13 +482,13 @@ void GSRayTest::HandleInput(InputManager::Event evt) {
     }
     break;
     case InputManager::RAW_INPUT_KEY_UP: {
-        if (evt.key == InputManager::RAW_INPUT_BUTTON_UP) {
+        if (evt.key == InputManager::RAW_INPUT_BUTTON_UP || evt.raw_key == 'w') {
             forward_speed_ = 0;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_DOWN) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_DOWN || evt.raw_key == 's') {
             forward_speed_ = 0;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_LEFT) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_LEFT || evt.raw_key == 'a') {
             side_speed_ = 0;
-        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT) {
+        } else if (evt.key == InputManager::RAW_INPUT_BUTTON_RIGHT || evt.raw_key == 'd') {
             side_speed_ = 0;
         } else if (evt.raw_key == 'u') {
             ui_enabled_ = !ui_enabled_;

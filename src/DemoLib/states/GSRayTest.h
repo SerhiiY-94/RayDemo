@@ -50,6 +50,8 @@ class GSRayTest : public GameState {
     bool invalidate_preview_ = true, last_invalidate_ = false;
     int invalidate_timeout_ = 0;
 
+    bool use_coherent_sampling_ = false;
+
     float forward_speed_ = 0, side_speed_ = 0;
 
     float cur_time_stat_ms_ = 0;

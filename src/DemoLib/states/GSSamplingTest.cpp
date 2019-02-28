@@ -218,7 +218,7 @@ void GSSamplingTest::Draw(float dt_s) {
 
 #if 1
     int i = (int)iteration_ * nsamplesx;
-    for (int j = 0; j < nsamplesx; j++) {
+    for (int j = 0; j < (int)nsamplesx; j++) {
         //float rx = RadicalInverse<3>(i + j);
         float rx = Ray::ScrambledRadicalInverse<3>(&radical_inv_perms[2], (i + j));
         //float ry = RadicalInverse<5>(i + j);
@@ -238,26 +238,16 @@ void GSSamplingTest::Draw(float dt_s) {
                 ry = 1.0f - std::sqrt(2.0f - 2.0f * ry);
             }
 
-            /*if (rx < 0 || ry < 0) {
-                __debugbreak();
-            }*/
-
             rx = rx * 0.5f + 0.5f;
             ry = ry * 0.5f + 0.5f;
         }
 
-        int x = rx * (width - 0);
-        int y = height - 1 - ry * (height - 0);
+        int x = (int)(rx * (width - 0));
+        int y = (int)(height - 1 - ry * (height - 0));
 
         pixels_[4 * (y * width + x) + 0] = 1.0f;
         pixels_[4 * (y * width + x) + 1] = pixels_[4 * (y * width + x) + 2] = pixels_[4 * (y * width + x) + 0];
         pixels_[4 * (y * width + x) + 3] = 1.0f;
-
-        /*for (int y = 0; y < height; y++) {
-        pixels_[4 * (y * width + x) + 0] = 1.0f;
-        pixels_[4 * (y * width + x) + 1] = pixels_[4 * (y * width + x) + 2] = pixels_[4 * (y * width + x) + 0];
-        pixels_[4 * (y * width + x) + 3] = 1.0f;
-        }*/
     }
 #endif
 

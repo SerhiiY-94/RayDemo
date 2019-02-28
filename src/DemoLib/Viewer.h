@@ -13,6 +13,8 @@ const char SCENE_NAME_KEY[]     = "scene_name";
 
 class Viewer : public GameBase {
 public:
-    Viewer(int w, int h, const char *local_dir, const char *scene_name, bool nogpu);
+    Viewer(int w, int h, const char *local_dir, const char *scene_name, int nogpu, int coherent);
+
+    bool use_coherent_sampling = false;
 };
 

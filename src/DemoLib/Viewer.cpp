@@ -11,7 +11,7 @@
 #include "states/GSCreate.h"
 #include "ui/FontStorage.h"
 
-Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, bool nogpu) : GameBase(w, h, local_dir) {
+Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, int nogpu, int coherent) : GameBase(w, h, local_dir) {
     auto ctx = GetComponent<Ren::Context>(REN_CONTEXT_KEY);
 
     JsObject main_config;
@@ -73,6 +73,8 @@ Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, boo
 
         AddComponent(RAY_RENDERER_KEY, ray_renderer);
     }
+
+    use_coherent_sampling = coherent != 0;
 
     auto input_manager = GetComponent<InputManager>(INPUT_MANAGER_KEY);
     input_manager->SetConverter(InputManager::RAW_INPUT_P1_MOVE, nullptr);
