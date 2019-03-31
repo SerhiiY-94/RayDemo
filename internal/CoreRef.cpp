@@ -390,6 +390,7 @@ void Ray::Ref::SampleMeshInTextureSpace(int iteration, int obj_index, int uv_lay
                     out_ray.dd_dx[0] = out_ray.dd_dx[1] = out_ray.dd_dx[2] = 0.0f;
                     out_ray.do_dy[0] = out_ray.do_dy[1] = out_ray.do_dy[2] = 0.0f;
                     out_ray.dd_dy[0] = out_ray.dd_dy[1] = out_ray.dd_dy[2] = 0.0f;
+                    out_ray.ray_depth = 0;
 
                     out_inter.mask_values[0] = 0xffffffff;
                     out_inter.prim_indices[0] = tri;
@@ -397,7 +398,6 @@ void Ray::Ref::SampleMeshInTextureSpace(int iteration, int obj_index, int uv_lay
                     out_inter.t = 1.0f;
                     out_inter.u = w;
                     out_inter.v = u;
-                    out_ray.ray_depth = 0;
                 }
             }
         }
@@ -1519,7 +1519,7 @@ Ray::pixel_color_t Ray::Ref::ShadeSurface(const pass_info_t &pi, const hit_data_
     ComputeDerivatives(I, inter.t, ray.do_dx, ray.do_dy, ray.dd_dx, ray.dd_dy, v1, v2, v3, plane_N, surf_der);
 
     // used to randomize halton sequence among pixels
-    int rand_hash = hash(pi.index),
+    int rand_hash = hash(pi.rand_index),
         rand_hash2 = hash(rand_hash),
         rand_hash3 = hash(rand_hash2);
     float rand_offset = construct_float(rand_hash),

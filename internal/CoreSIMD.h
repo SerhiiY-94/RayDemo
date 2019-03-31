@@ -765,8 +765,8 @@ void Ray::NS::SampleMeshInTextureSpace(int iteration, int obj_index, int uv_laye
 
         ibbox_min[0] -= ibbox_min[0] % DimX;
         ibbox_min[1] -= ibbox_min[1] % DimY;
-        ibbox_max[0] += ((ibbox_max[0] + 1) % DimX) ? (DimX - (ibbox_max[0] - 1) % DimX) : 0;
-        ibbox_max[1] += ((ibbox_max[1] + 1) % DimY) ? (DimY - (ibbox_max[1] - 1) % DimY) : 0;
+        ibbox_max[0] += ((ibbox_max[0] + 1) % DimX) ? (DimX - (ibbox_max[0] + 1) % DimX) : 0;
+        ibbox_max[1] += ((ibbox_max[1] + 1) % DimY) ? (DimY - (ibbox_max[1] + 1) % DimY) : 0;
 
         const simd_fvec2 d01 = t0 - t1, d12 = t1 - t2, d20 = t2 - t0;
 
@@ -2468,8 +2468,8 @@ void Ray::NS::ShadeSurface(const simd_ivec<S> &px_index, const pass_info_t &pi, 
 
     // used to randomize halton sequence among pixels
     simd_ivec<S> rand_hash = hash(px_index),
-                 rand_hash2 = hash(rand_hash),
-                 rand_hash3 = hash(rand_hash2);
+        rand_hash2 = hash(rand_hash),
+        rand_hash3 = hash(rand_hash2);
     simd_fvec<S> rand_offset = construct_float(rand_hash),
                  rand_offset2 = construct_float(rand_hash2),
                  rand_offset3 = construct_float(rand_hash3);
