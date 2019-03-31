@@ -1,12 +1,9 @@
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.1)
 project(RayDemo)
 
 set(CMAKE_CXX_STANDARD 11)
 
 set(SDL_STATIC ON)
-
-add_definitions(-DCPU_ARCH_SSE2)
-add_definitions(-DMATH_NO_INLINE)
 
 set(RENDERER SW)
 
