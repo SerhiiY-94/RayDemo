@@ -15,6 +15,10 @@
 #include <Sys/AssetFile.h>
 #include <Sys/Log.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_PKM
+#include <Ren/SOIL2/stb_image.h>
+
 #define _abs(x) ((x) > 0.0f ? (x) : -(x))
 
 std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &js_scene) {
@@ -38,7 +42,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 std::tolower(name[name.length() - 3]) == 'h') {
                 data = LoadHDR(name, w, h);
             } else {
-                data = LoadTGA(name, w, h);
+                data = Load_stb_image(name, w, h);
             }
             if (data.empty()) throw std::runtime_error("error loading texture");
 
@@ -773,6 +777,20 @@ std::vector<Ray::pixel_color8_t> LoadHDR(const std::string &name, int &out_w, in
     }
 
     return data;
+}
+
+std::vector<Ray::pixel_color8_t> Load_stb_image(const std::string &name, int &w, int &h) {
+    stbi_set_flip_vertically_on_load(1);
+    
+    int channels;
+    uint8_t *img_data = stbi_load(name.c_str(), &w, &h, &channels, 4);
+
+    std::vector<Ray::pixel_color8_t> tex_data(w * h);
+    memcpy(&tex_data[0].r, img_data, w * h * sizeof(Ray::pixel_color8_t));
+
+    stbi_image_free(img_data);
+
+    return tex_data;
 }
 
 #undef _abs
