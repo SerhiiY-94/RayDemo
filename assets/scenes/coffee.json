@@ -1,0 +1,117 @@
+{
+    "environment" : {
+        "sun_dir" : [ 0.0, 0.0, 0.0 ],
+        "sun_col" : [ 0.0, 0.0, 0.0 ],
+        "sun_softness" : 0.05,
+        "env_col" : [ 0.0, 0.0, 0.0 ]
+    },
+    "camera" : {
+        "view_origin" : [ -0.296004, 21.0, 82.8151 ],
+        "view_dir" : [ -1.0, 0.0, 0.0 ],
+        "view_target" : [ 0, 17.0, 0 ],
+        "fov" : 31.25,
+        "fwd_speed" : 0.25
+    },
+    "materials" : {
+        "floor_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.578596, 0.578596, 0.578596 ]
+        },
+        "floor_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "floor" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.5,
+            "int_ior" : 1.5,
+            "materials" : [ "floor_diff", "floor_glossy" ]
+        },
+        "plastic_orange_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 0.378676, 0.0134734 ]
+        },
+        "plastic_orange_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+        },
+        "plastic_orange" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "plastic_orange_diff", "plastic_orange_glossy" ]
+        },
+        "plastic_black_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.00631, 0.00631, 0.00631 ]
+        },
+        "plastic_black_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "roughness" : 0.95,
+        },
+        "plastic_black" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "plastic_black_diff", "plastic_black_glossy" ]
+        },
+        "chrome" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "glass_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0,
+            "int_ior" : 1.5,
+        },
+        "glass_refr" : {
+            "type" : "refractive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0, 0.0, 0.0 ],
+            "int_ior" : 1.5,
+            "roughness" : 0.0,
+        },
+        "glass" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "glass_refr", "glass_glossy" ]
+        },
+        "light" : {
+            "type" : "emissive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "strength" : 2.0,
+        },
+    },
+    "meshes" : {
+        "coffee" : {
+            "vertex_data" : "assets/meshes/coffee.bin",
+            "materials" : [ "floor", "plastic_orange", "plastic_black", "chrome", "glass" ]
+        },
+        "coffee_light" : {
+            "vertex_data" : "assets/meshes/coffee_light.bin",
+            "materials" : [ "light" ]
+        }
+    },
+    "mesh_instances" : [
+        {
+            "mesh" : "coffee"
+        },
+        {
+            "mesh" : "coffee_light"
+        }
+    ]
+}

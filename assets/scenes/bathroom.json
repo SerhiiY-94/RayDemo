@@ -1,0 +1,304 @@
+{
+    "environment" : {
+        "sun_dir" : [ 0.0, 0.0, 0.0 ],
+        "sun_col" : [ 0.0, 0.0, 0.0 ],
+        "sun_softness" : 0.05,
+        "env_col1" : [ 0.1, 0.1, 0.1 ]
+    },
+    "camera" : {
+        "view_origin" : [ 0.724053, 91.2405, -22.7584 ],
+        "view_dir" : [ -0.751969, 0.015, -0.659119 ],
+        "view_target1" : [ 0, 17.0, 0 ],
+        "fov" : 55.0,
+        "fwd_speed" : 2.5
+    },
+    "materials" : {
+        "Null" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0, 0.0, 0.0 ]
+        },
+        "Floor_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/floor_tiles.jpg"
+        },
+        "Floor_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.95
+        },
+        "Floor" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "Floor_diff", "Floor_glossy" ]
+        },
+        "Rug" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/rug.jpg"
+        },
+        "WoodDiffuse" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/wood.jpg"
+        },
+        "Wood_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/wood.jpg"
+        },
+        "Wood_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.95
+        },
+        "Wood" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.7,
+            "int_ior" : 1.5,
+            "materials" : [ "Wood_diff", "Wood_glossy" ]
+        },
+        "Marble" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/marble.jpg"
+        },
+        "Pots_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.00631, 0.00631, 0.00631 ]
+        },
+        "Pots_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "roughness" : 0.85
+        },
+        "Pots" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.025,
+            "int_ior" : 0.0,
+            "materials" : [ "Pots_diff", "Pots_glossy" ]
+        },
+        "StainlessSmooth" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "StainlessRough" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.5, 0.5, 0.5 ]
+        },
+        "Bathtube_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "Bathtube_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0
+        },
+        "Bathtube" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.25,
+            "int_ior" : 0.0,
+            "materials" : [ "Bathtube_diff", "Bathtube_glossy" ]
+        },
+        "Foam" : {
+            "type" : "diffuse",
+            "normal_map" : "assets/textures/bathroom/foam_bump.jpg",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "GreyWall" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.893289, 0.893289, 0.893289 ]
+        },
+        "Wallpaper" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/Wallpaper-1.jpg"
+        },
+        "Mirror" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "WhiteWood" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.893289, 0.893289, 0.893289 ]
+        },
+        "Vase_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.612066, 0.612066, 0.612066 ]
+        },
+        "Vase_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0
+        },
+        "Vase" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.25,
+            "int_ior" : 0.0,
+            "materials" : [ "Vase_diff", "Vase_glossy" ]
+        },
+        "WoodFrame" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/wood2.jpg",
+            "main_color" : [ 0.612066, 0.612066, 0.612066 ]
+        },
+        "Paper" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/wood2.jpg",
+            "main_color" : [ 0.578596, 0.578596, 0.578596 ]
+        },
+        "Painting1" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/picture1.jpg"
+        },
+        "Painting2" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/bathroom/wallpaper-2.jpg",
+        },
+        "Painting3" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0581872, 0.0342302, 0.0179364 ]
+        },
+        "Painting4" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0477758, 0.0209511, 0.00715504 ]
+        },
+        "MetalPlate" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.5
+        },
+        "LeaveStems" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0638149, 0.022013, 0.00120174 ]
+        },
+        "Leaves" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.573159, 0.215764, 0.022013 ]
+        },
+        "Gold" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 0.849, 0.532 ],
+            "roughness" : 0.5
+        },
+        "BlackPlastic_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.00631, 0.00631, 0.00631 ]
+        },
+        "BlackPlastic_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0
+        },
+        "BlackPlastic" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.1,
+            "int_ior" : 1.5,
+            "materials" : [ "BlackPlastic_diff", "BlackPlastic_glossy" ]
+        },
+        "WindowFrame" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.00631, 0.00631, 0.00631 ]
+        },
+        "Blinds" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.893289, 0.893289, 0.893289 ]
+        },
+        "BlindsString" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.578596, 0.578596, 0.578596 ]
+        },
+        "BulbGlass_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0,
+            "int_ior" : 1.5,
+        },
+        "BulbGlass_refr" : {
+            "type" : "refractive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0, 0.0, 0.0 ],
+            "int_ior" : 1.5,
+            "roughness" : 0.0,
+        },
+        "BulbGlass" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "BulbGlass_refr", "BulbGlass_glossy" ]
+        },
+        "Light" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0, 0.0, 0.0 ]
+        },
+        "Ceiling" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.684615, 0.684615, 0.684615 ]
+        },
+        "lightsource" : {
+            "type" : "emissive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "strength" : 35.0,
+        },
+    },
+    "meshes" : {
+        "bathroom" : {
+            "vertex_data" : "assets/meshes/bathroom.bin",
+            "materials" : [ "Floor", "Rug", "WoodDiffuse", "Wood", "Marble", "Pots", "StainlessSmooth", "Bathtube", "Foam", "GreyWall", "Wallpaper", "Mirror", "WhiteWood", "Vase", "WoodFrame", "Paper", "Painting1", "Painting3", "Painting4", "MetalPlate", "LeaveStems", "Leaves", "Painting2", "Gold", "BlackPlastic", "WindowFrame", "Blinds", "BlindsString", "BulbGlass", "Light", "Ceiling" ],
+            "use_fast_bvh_build" : true,
+        },
+        "bathroom_wtf" : {
+            "vertex_data" : "assets/meshes/bathroom_highpoly_wtf.bin",
+            "materials" : [ "StainlessRough" ],
+            "use_fast_bvh_build" : true,
+        },
+        "bathroom_light" : {
+            "vertex_data" : "assets/meshes/bathroom_light.bin",
+            "materials" : [ "lightsource" ],
+            "use_fast_bvh_build" : false,
+        }
+    },
+    "mesh_instances" : [
+        {
+            "mesh" : "bathroom"
+        },
+        {
+            "mesh" : "bathroom_wtf"
+        },
+        {
+            "mesh" : "bathroom_light"
+        }
+    ]
+}

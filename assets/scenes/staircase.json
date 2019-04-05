@@ -1,0 +1,172 @@
+{
+    "environment" : {
+        "sun_dir" : [ 0.0, 0.0, 0.0 ],
+        "sun_col" : [ 0.0, 0.0, 0.0 ],
+        "sun_softness" : 0.05,
+        "env_col" : [ 0.0, 0.0, 0.0 ]
+    },
+    "camera" : {
+        "view_origin" : [ 5.555139, 145.679901, 485.515045 ],
+        "view_dir" : [ -0.008268, 0.058995, -0.998226 ],
+        "fov" : 50.0,
+        "fwd_speed" : 5
+    },
+    "materials" : {
+        "WoodFloor" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/WoodFloor.jpg"
+        },
+        "Wallpaper" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Wallpaper.jpg"
+        },
+        "WoodStairs_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Woodpanel.jpg"
+        },
+        "WoodStairs_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.95,
+            "int_ior" : 1.5,
+        },
+        "WoodStairs" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.05,
+            "int_ior" : 0.0,
+            "materials" : [ "WoodStairs_diff", "WoodStairs_glossy" ]
+        },
+        "WhitePaint" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.578596, 0.578596, 0.578596 ]
+        },
+        "MagnoliaPaint" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.578596, 0.578596, 0.578596 ]
+        },
+        "Painting1" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Painting1.jpg",
+        },
+        "Painting2" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Painting2.jpg",
+        },
+        "Painting3" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Painting3.jpg",
+        },
+        "Gold" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 0.95, 0.35 ]
+        },
+        "WoodChair_diff" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/WoodChair.jpg"
+        },
+        "WoodChair_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.95,
+            "int_ior" : 1.5,
+        },
+        "WoodChair" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 0.05,
+            "int_ior" : 0.0,
+            "materials" : [ "WoodChair_diff", "WoodChair_glossy" ]
+        },
+        "ChairSeat" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.117647, 0.054902, 0.0666667 ]
+        },
+        "WoodLamp" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/WoodChair.jpg",
+        },
+        "Brass" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.27, 0.254, 0.15 ],
+            "roughness" : 0.85
+        },
+        "StainlessSteel" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+        },
+        "WhitePlastic" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+        },
+        "Lampshade" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/Fabric.jpg",
+        },
+        "Black" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.01, 0.01, 0.01 ]
+        },
+        "BrushedAluminium" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/staircase/BrushedAluminium.jpg",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "Glass_glossy" : {
+            "type" : "glossy",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "roughness" : 0.0,
+            "int_ior" : 1.5,
+        },
+        "Glass_refr" : {
+            "type" : "refractive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 0.0, 0.0, 0.0 ],
+            "int_ior" : 1.5,
+            "roughness" : 0.0,
+        },
+        "Glass" : {
+            "type" : "mix",
+            "main_texture" : "assets/textures/white.tga",
+            "strength" : 1.0,
+            "int_ior" : 1.5,
+            "materials" : [ "Glass_refr", "Glass_glossy" ]
+        },
+        "Emission" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "Candles" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ]
+        },
+        "lightsource" : {
+            "type" : "emissive",
+            "main_texture" : "assets/textures/white.tga",
+            "main_color" : [ 1.0, 1.0, 1.0 ],
+            "strength" : 20.0
+        },
+    },
+    "meshes" : {
+        "staircase" : {
+            "vertex_data" : "assets/meshes/staircase.bin",
+            "materials" : [ "WoodFloor", "Wallpaper", "WoodStairs", "WhitePaint", "MagnoliaPaint", "Painting1", "Painting2", "Painting3", "Gold", "WoodChair", "ChairSeat", "WoodLamp", "Brass", "StainlessSteel", "WhitePlastic", "Lampshade", "Black", "BrushedAluminium", "Glass", "Emission", "Candles", "lightsource" ]
+        }
+    },
+    "mesh_instances" : [
+        {
+            "mesh" : "staircase"
+        }
+    ]
+}

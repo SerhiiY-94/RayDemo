@@ -1,0 +1,69 @@
+{
+    "environment" : {
+        "sun_dir" : [ 0.0, -1.0, 0.0 ],
+        "sun_col" : [ 5.0, 5.0, 4.5 ],
+        "sun_softness" : 0.05,
+        "env_col" : [ 0.92, 1.4, 1.96 ]
+    },
+    "camera" : {
+        "view_origin" : [ 1300, 100, 0 ],
+        "view_dir" : [ -1.0, 0.0, 0.0 ],
+        "fwd_speed" : 8.0
+    },
+    "materials" : {
+        "arch" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_arch_diff.jpg",
+            "normal_map" : "assets/textures/sponza/sponza_arch_ddn.jpg"
+        },
+        "background" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/background.jpg",
+            "normal_map" : "assets/textures/sponza/background_ddn.jpg"
+        },
+        "bricks" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/spnza_bricks_a_diff.jpg",
+            "normal_map" : "assets/textures/sponza/spnza_bricks_a_ddn.jpg"
+        },
+        "ceiling" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_ceiling_a_diff.jpg"
+        },
+        "column_a" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_column_a_diff.jpg",
+            "normal_map" : "assets/textures/sponza/sponza_column_a_ddn.jpg"
+        },
+        "column_c" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_column_c_diff.jpg",
+            "normal_map" : "assets/textures/sponza/sponza_column_c_ddn.jpg"
+        },
+        "details" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_details_diff.jpg"
+        },
+        "floor" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/sponza_floor_a_diff.jpg"
+        },
+        "lion" : {
+            "type" : "diffuse",
+            "main_texture" : "assets/textures/sponza/lion.jpg",
+            "normal_map" : "assets/textures/sponza/lion_ddn.jpg"
+        }
+    },
+    "meshes" : {
+        "sponza" : {
+            "vertex_data" : "assets/meshes/sponza_simple.bin",
+            "materials" : [ "arch", "background", "bricks", "ceiling", "column_a", 
+                            "column_c", "details", "floor", "lion" ]
+        }
+    },
+    "mesh_instances" : [
+        {
+            "mesh" : "sponza"
+        }
+    ]
+}
