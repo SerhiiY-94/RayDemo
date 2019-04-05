@@ -234,8 +234,8 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             const JsString &js_vtx_data = js_mesh_obj.at("vertex_data");
             if (js_vtx_data.val.find(".obj") != std::string::npos) {
                 std::tie(attrs, indices, groups) = LoadOBJ(js_vtx_data.val);
-            } else if (js_vtx_data.val.find(".raw") != std::string::npos) {
-                std::tie(attrs, indices, groups) = LoadRAW(js_vtx_data.val);
+            } else if (js_vtx_data.val.find(".bin") != std::string::npos) {
+                std::tie(attrs, indices, groups) = LoadBIN(js_vtx_data.val);
             } else {
                 throw std::runtime_error("unknown mesh type");
             }
@@ -518,9 +518,9 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
 #if 0
     {
         std::string out_file_name = file_name;
-        out_file_name[out_file_name.size() - 3] = 'r';
-        out_file_name[out_file_name.size() - 2] = 'a';
-        out_file_name[out_file_name.size() - 1] = 'w';
+        out_file_name[out_file_name.size() - 3] = 'b';
+        out_file_name[out_file_name.size() - 2] = 'i';
+        out_file_name[out_file_name.size() - 1] = 'n';
 
         std::ofstream out_file(out_file_name, std::ios::binary);
 
@@ -580,7 +580,7 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     return std::make_tuple(std::move(attrs), std::move(indices), std::move(groups));
 }
 
-std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadRAW(const std::string &file_name) {
+std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> LoadBIN(const std::string &file_name) {
     std::ifstream in_file(file_name, std::ios::binary);
     uint32_t num_attrs;
     in_file.read((char *)&num_attrs, 4);
