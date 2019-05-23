@@ -168,7 +168,7 @@
         },
         "Painting2" : {
             "type" : "diffuse",
-            "main_texture" : "assets/textures/bathroom/wallpaper-2.jpg",
+            "main_texture" : "assets/textures/bathroom/wallpaper-2.jpg"
         },
         "Painting3" : {
             "type" : "diffuse",
@@ -240,14 +240,14 @@
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 1.0, 1.0, 1.0 ],
             "roughness" : 0.0,
-            "int_ior" : 1.5,
+            "int_ior" : 1.5
         },
         "BulbGlass_refr" : {
             "type" : "refractive",
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 0.0, 0.0, 0.0 ],
             "int_ior" : 1.5,
-            "roughness" : 0.0,
+            "roughness" : 0.0
         },
         "BulbGlass" : {
             "type" : "mix",
@@ -270,24 +270,24 @@
             "type" : "emissive",
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 1.0, 1.0, 1.0 ],
-            "strength" : 35.0,
+            "strength" : 35.0
         },
     },
     "meshes" : {
         "bathroom" : {
             "vertex_data" : "assets/meshes/bathroom.bin",
             "materials" : [ "Floor", "Rug", "WoodDiffuse", "Wood", "Marble", "Pots", "StainlessSmooth", "Bathtube", "Foam", "GreyWall", "Wallpaper", "Mirror", "WhiteWood", "Vase", "WoodFrame", "Paper", "Painting1", "Painting3", "Painting4", "MetalPlate", "LeaveStems", "Leaves", "Painting2", "Gold", "BlackPlastic", "WindowFrame", "Blinds", "BlindsString", "BulbGlass", "Light", "Ceiling" ],
-            "use_fast_bvh_build" : true,
+            "use_fast_bvh_build" : true
         },
         "bathroom_wtf" : {
             "vertex_data" : "assets/meshes/bathroom_highpoly_wtf.bin",
             "materials" : [ "StainlessRough" ],
-            "use_fast_bvh_build" : true,
+            "use_fast_bvh_build" : true
         },
         "bathroom_light" : {
             "vertex_data" : "assets/meshes/bathroom_light.bin",
             "materials" : [ "lightsource" ],
-            "use_fast_bvh_build" : false,
+            "use_fast_bvh_build" : false
         }
     },
     "mesh_instances" : [

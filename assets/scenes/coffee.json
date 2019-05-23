@@ -37,7 +37,7 @@
         },
         "plastic_orange_glossy" : {
             "type" : "glossy",
-            "main_texture" : "assets/textures/white.tga",
+            "main_texture" : "assets/textures/white.tga"
         },
         "plastic_orange" : {
             "type" : "mix",
@@ -54,7 +54,7 @@
         "plastic_black_glossy" : {
             "type" : "glossy",
             "main_texture" : "assets/textures/white.tga",
-            "roughness" : 0.95,
+            "roughness" : 0.95
         },
         "plastic_black" : {
             "type" : "mix",
@@ -73,14 +73,14 @@
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 1.0, 1.0, 1.0 ],
             "roughness" : 0.0,
-            "int_ior" : 1.5,
+            "int_ior" : 1.5
         },
         "glass_refr" : {
             "type" : "refractive",
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 0.0, 0.0, 0.0 ],
             "int_ior" : 1.5,
-            "roughness" : 0.0,
+            "roughness" : 0.0
         },
         "glass" : {
             "type" : "mix",
@@ -93,8 +93,8 @@
             "type" : "emissive",
             "main_texture" : "assets/textures/white.tga",
             "main_color" : [ 1.0, 1.0, 1.0 ],
-            "strength" : 2.0,
-        },
+            "strength" : 2.0
+        }
     },
     "meshes" : {
         "coffee" : {
