@@ -576,14 +576,14 @@ void ShadePrimary(pass_info_t pi, __global const float *halton, int w, int h,
 }
 
 __kernel
-void ShadeSecondary(pass_info_t pi, __global const float *halton, __global const hit_data_t *prim_inters, __global const ray_packet_t *prim_rays, int prim_rays_count,
+void ShadeSecondary(pass_info_t pi, __global int *in_rays_count, __global const float *halton, __global const hit_data_t *prim_inters, __global const ray_packet_t *prim_rays,
                     __global const mesh_instance_t *mesh_instances, __global const uint *mi_indices, __global const mesh_t *meshes, __global const transform_t *transforms,
                     __global const uint *vtx_indices, __global const vertex_t *vertices, __global const bvh_node_t *nodes, uint node_index, 
                     __global const tri_accel_t *tris, __global const uint *tri_indices, const environment_t env, __global const material_t *materials, __global const texture_t *textures, __read_only image2d_array_t texture_atlas,
                     __global const light_t *lights, __global const uint *li_indices, uint light_node_index,
                     __write_only image2d_t frame_buf, __read_only image2d_t frame_buf2, __global ray_packet_t *out_secondary_rays, __global int *out_secondary_rays_count) {
     const int index = get_global_id(0);
-    if (index >= prim_rays_count) return;
+    if (index >= *in_rays_count) return;
 
     __global const ray_packet_t *orig_ray = &prim_rays[index];
 

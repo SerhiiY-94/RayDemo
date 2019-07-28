@@ -47,7 +47,7 @@ protected:
         reset_sample_data_kernel_, store_sh_coeffs_kernel_, compute_sh_data_kernel_, mix_sh_data_kernel_;
 
     cl::Buffer prim_rays_buf_, prim_inters_buf_, color_table_buf_,
-    secondary_rays_buf_, secondary_rays_count_buf_;
+               secondary_rays_buf_, rays_count_buf_[2];
 
     int w_ = 0, h_ = 0;
 
@@ -67,8 +67,9 @@ protected:
 
     cl::Buffer uniform_buf_;
 
-    std::vector<pixel_color_t> frame_pixels_;
-    std::vector<shl1_data_t> sh_data_host_;
+    mutable std::vector<pixel_color_t> frame_pixels_;
+    mutable std::vector<shl1_data_t> sh_data_host_;
+    bool host_data_dirty_ = false;
 
     stats_t stats_ = { 0 };
 
@@ -89,13 +90,13 @@ protected:
                              const environment_t &env, const cl::Buffer &materials, const cl::Buffer &textures, 
                              const cl::Image2DArray &texture_atlas, const cl::Buffer &lights, const cl::Buffer &li_incies, cl_uint light_node_index,
                              const cl::Image2D &frame_buf, const cl::Buffer &secondary_rays, const cl::Buffer &secondary_rays_count);
-    bool kernel_ShadeSecondary(const pass_info_t &pi, const cl::Buffer &halton,
+    bool kernel_ShadeSecondary(const pass_info_t &pi, const cl::Buffer &in_rays_count, const cl::Buffer &halton,
                                const cl::Buffer &intersections, const cl::Buffer &rays,
-                               int rays_count, const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes,
+                               int max_rays_count, const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes,
                                const cl::Buffer &transforms, const cl::Buffer &vtx_indices, const cl::Buffer &vertices,
                                const cl::Buffer &nodes, cl_uint node_index, const cl::Buffer &tris, const cl::Buffer &tri_indices,
                                const environment_t &env, const cl::Buffer &materials, const cl::Buffer &textures, const cl::Image2DArray &texture_atlas,
-                               const cl::Buffer &lights, const cl::Buffer &li_incies, cl_uint light_node_index,
+                               const cl::Buffer &lights, const cl::Buffer &li_indices, cl_uint light_node_index,
                                const cl::Image2D &frame_buf, const cl::Image2D &frame_buf2,
                                const cl::Buffer &secondary_rays, const cl::Buffer &secondary_rays_count);
     bool kernel_TracePrimaryRays(const cl::Buffer &rays, const Ray::rect_t &rect, cl_int w, cl_int h,
@@ -107,7 +108,7 @@ protected:
     bool kernel_TraceSecondaryRays(const cl::Buffer &rays, cl_int rays_count,
                                    const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes, const cl::Buffer &transforms,
                                    const cl::Buffer &nodes, cl_uint node_index, const cl::Buffer &tris, const cl::Buffer &tri_indices, const cl::Buffer &intersections);
-    bool kernel_TraceSecondaryRaysImg(const cl::Buffer &rays, cl_int rays_count,
+    bool kernel_TraceSecondaryRaysImg(const cl::Buffer &rays, int rays_count_bound, const cl::Buffer &rays_count,
                                       const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes, const cl::Buffer &transforms,
                                       const cl::Image1DBuffer &nodes, cl_uint node_index, const cl::Buffer &tris, const cl::Buffer &tri_indices, const cl::Buffer &intersections);
     bool kernel_ComputeRayHashes(const cl::Buffer &rays, cl_int rays_count, cl_float3 root_min, cl_float3 cell_size, const cl::Buffer &out_hashes);
@@ -132,7 +133,6 @@ protected:
     bool kernel_ComputeSHData(const cl::Image2D &clean_buf, cl_int w, cl_int h, const cl::Buffer &in_out_sh_data);
     bool kernel_MixSHData(const cl::Buffer &sh_data_temp, cl_int count, cl_float k, const cl::Buffer &sh_data_clean);
     
-
     void UpdateHaltonSequence(int iteration, std::unique_ptr<float[]> &seq);
 
     bool ExclusiveScan_CPU(const cl::Buffer &values, cl_int count, cl_int offset, cl_int stride, const cl::Buffer &out_scan_values);
@@ -169,13 +169,8 @@ public:
         return std::make_pair(w_, h_);
     }
 
-    const pixel_color_t *get_pixels_ref() const override {
-        return (const pixel_color_t *)&frame_pixels_[0];
-    }
-
-    const shl1_data_t *get_sh_data_ref() const override {
-        return &sh_data_host_[0];
-    }
+    const pixel_color_t *get_pixels_ref() const override;
+    const shl1_data_t *get_sh_data_ref() const override;
 
     void Resize(int w, int h) override;
     void Clear(const pixel_color_t &c) override;

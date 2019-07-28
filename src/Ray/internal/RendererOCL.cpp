@@ -105,8 +105,7 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
     tri_rast_x_ = tri_rast_y_ = 8;
     tri_bin_size_ = 1024;
 
-    {
-        // create context
+    {   // create context
         cl_int error = CL_SUCCESS;
         context_ = cl::Context(devices, nullptr, nullptr, nullptr, &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
@@ -319,7 +318,10 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         //secondary_inters_count_buf_ = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
         //if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
-        secondary_rays_count_buf_ = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
+        rays_count_buf_[0] = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
+        if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
+
+        rays_count_buf_[1] = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
         uniform_buf_ = cl::Buffer(context_, CL_MEM_READ_ONLY, UniformBufSize, nullptr, &error);
@@ -345,6 +347,20 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
 
     auto rand_func = std::bind(std::uniform_int_distribution<int>(), std::mt19937(0));
     permutations_ = Ray::ComputeRadicalInversePermutations(g_primes, PrimesCount, rand_func);
+}
+
+const Ray::pixel_color_t *Ray::Ocl::Renderer::get_pixels_ref() const {
+    if (host_data_dirty_) {
+        queue_.enqueueReadImage(final_buf_, CL_TRUE, {}, { (size_t)w_, (size_t)h_, 1 }, 0, 0, &frame_pixels_[0]);
+    }
+    return (const pixel_color_t *)&frame_pixels_[0];
+}
+
+const Ray::shl1_data_t *Ray::Ocl::Renderer::get_sh_data_ref() const {
+    if (host_data_dirty_ && sh_data_size_) {
+        queue_.enqueueReadBuffer(sh_data_clean_, CL_TRUE, 0, sizeof(shl1_data_t) * sh_data_size_, &sh_data_host_[0]);
+    }
+    return &sh_data_host_[0];
 }
 
 void Ray::Ocl::Renderer::Resize(int w, int h) {
@@ -472,7 +488,7 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
     if (cam.type != Geo) {
         if (!kernel_GeneratePrimaryRays((cl_int)region.iteration, cl_cam, region.rect(), w_, h_, halton_seq_buf_, prim_rays_buf_)) return;
 
-        queue_.finish();
+        //queue_.finish();
         time_after_ray_gen = std::chrono::high_resolution_clock::now();
 
         if (s->nodes_.img_buf().get() != nullptr) {
@@ -506,11 +522,13 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
         time_after_ray_gen = std::chrono::high_resolution_clock::now();
     }
 
-    cl_int secondary_rays_count = 0;
-    if (queue_.enqueueWriteBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int),
-                                  &secondary_rays_count) != CL_SUCCESS) return;
+    {   // Reset secondary rays counter
+        static cl_int zero = 0;
+        if (queue_.enqueueWriteBuffer(rays_count_buf_[0], CL_FALSE, 0, sizeof(cl_int),
+                                      &zero) != CL_SUCCESS) return;
+    }
 
-    queue_.finish();
+    //queue_.finish();
     const auto time_after_prim_trace = std::chrono::high_resolution_clock::now();
 
     if (!kernel_ShadePrimary(pass_info, halton_seq_buf_, region.rect(), w_, h_,
@@ -520,17 +538,17 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
                              s->nodes_.buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(),
                              s->env_, s->materials_.buf(), s->textures_.buf(), s->texture_atlas_.atlas(),
                              s->lights_.buf(), s->li_indices_.buf(), (cl_uint)s->light_nodes_start_,
-                             temp_buf_, secondary_rays_buf_, secondary_rays_count_buf_)) return;
+                             temp_buf_, secondary_rays_buf_, rays_count_buf_[0])) return;
 
-    if (queue_.enqueueReadBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int),
-                                 &secondary_rays_count) != CL_SUCCESS) return;
+    //if (queue_.enqueueReadBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int),
+    //                             &secondary_rays_count) != CL_SUCCESS) return;
 
-    queue_.finish();
+    //queue_.finish();
     const auto time_after_prim_shade = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::micro> secondary_sort_time{}, secondary_trace_time{}, secondary_shade_time{};
 
     if (cam.pass_settings.flags & OutputSH) {
-        if (sh_data_size_ != w_ * h_) {
+        /*if (sh_data_size_ != w_ * h_) {
             size_t new_size = w_ * h_;
             sh_data_temp_ = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(shl1_data_t) * new_size, nullptr, &error);
             if (error != CL_SUCCESS) return;
@@ -545,11 +563,18 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
             sh_data_size_ = new_size;
         }
         if (!kernel_ResetSampleData(sh_data_temp_, (cl_int)sh_data_size_)) return;
-        if (!kernel_StoreSHCoeffs(secondary_rays_buf_, secondary_rays_count, (cl_int)w_, sh_data_temp_)) return;
+        if (!kernel_StoreSHCoeffs(secondary_rays_buf_, secondary_rays_count, (cl_int)w_, sh_data_temp_)) return;*/
     }
 
-    for (int bounce = 0; bounce < pass_info.settings.max_total_depth && secondary_rays_count && !(pass_info.settings.flags & SkipIndirectLight); bounce++) {
+    // Upper bound for secondary rays
+    int max_secondary_rays_count = w_ * h_;
+
+    for (int bounce = 0; bounce < pass_info.settings.max_total_depth && !(pass_info.settings.flags & SkipIndirectLight); bounce++) {
         auto time_secondary_sort_start = std::chrono::high_resolution_clock::now();
+
+        /*cl_int secondary_rays_count = 0;
+        if (queue_.enqueueReadBuffer(rays_count_buf_[0], CL_TRUE, 0, sizeof(cl_int),
+                                     &secondary_rays_count) != CL_SUCCESS) return;
 
         if (secondary_rays_count > (cl_int)scan_portion_ * 64) {
             if (!SortRays(secondary_rays_buf_, secondary_rays_count, root_min, cell_size, ray_hashes_buf_, head_flags_buf_,
@@ -557,48 +582,50 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
                           partial_flags2_buf_, partial_flags3_buf_, partial_flags4_buf_, scan_values_buf_, scan_values2_buf_,
                           scan_values3_buf_, scan_values4_buf_, chunks_buf_, chunks2_buf_, counters_buf_, skeleton_buf_, prim_rays_buf_)) return;
             std::swap(prim_rays_buf_, secondary_rays_buf_);
-        }
+        }*/
 
-        queue_.finish();
+        //queue_.finish();
         auto time_secondary_trace_start = std::chrono::high_resolution_clock::now();
 
         if (s->nodes_.img_buf().get() != nullptr) {
-            if (!kernel_TraceSecondaryRaysImg(secondary_rays_buf_, secondary_rays_count,
+            if (!kernel_TraceSecondaryRaysImg(secondary_rays_buf_, max_secondary_rays_count, rays_count_buf_[0],
                                               s->mesh_instances_.buf(), s->mi_indices_.buf(), s->meshes_.buf(), s->transforms_.buf(),
                                               s->nodes_.img_buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(), prim_inters_buf_)) return;
         } else {
-            if (!kernel_TraceSecondaryRays(secondary_rays_buf_, secondary_rays_count,
+            /*if (!kernel_TraceSecondaryRays(secondary_rays_buf_, secondary_rays_count,
                                            s->mesh_instances_.buf(), s->mi_indices_.buf(), s->meshes_.buf(), s->transforms_.buf(),
-                                           s->nodes_.buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(), prim_inters_buf_)) return;
+                                           s->nodes_.buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(), prim_inters_buf_)) return;*/
         }
 
-        cl_int new_secondary_rays_count = 0;
-        if (queue_.enqueueWriteBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int), &new_secondary_rays_count) != CL_SUCCESS) return;
+        {   // Reset secondary rays counter
+            static cl_int zero = 0;
+            if (queue_.enqueueWriteBuffer(rays_count_buf_[1], CL_FALSE, 0, sizeof(cl_int), &zero) != CL_SUCCESS) return;
+        }
 
 #if 0
         pixel_color_t c = { 0, 0, 0, 0 };
         queue_.enqueueFillImage(temp_buf_, *(cl_float4 *)&c, {}, { (size_t)w_, (size_t)h_, 1 });
 #endif
-        queue_.finish();
+        //queue_.finish();
         auto time_secondary_shade_start = std::chrono::high_resolution_clock::now();
 
         if (queue_.enqueueCopyImage(temp_buf_, final_buf_, { 0, 0, 0 }, { 0, 0, 0 },
-        { (size_t)w_, (size_t)h_, 1 }) != CL_SUCCESS) return;
+                                    { (size_t)w_, (size_t)h_, 1 }) != CL_SUCCESS) return;
 
         pass_info.bounce = bounce + 3;
 
-        if (!kernel_ShadeSecondary(pass_info, halton_seq_buf_, prim_inters_buf_, secondary_rays_buf_, (int)secondary_rays_count,
+        if (!kernel_ShadeSecondary(pass_info, rays_count_buf_[0], halton_seq_buf_, prim_inters_buf_, secondary_rays_buf_, max_secondary_rays_count,
                                    s->mesh_instances_.buf(), s->mi_indices_.buf(), s->meshes_.buf(),
                                    s->transforms_.buf(), s->vtx_indices_.buf(), s->vertices_.buf(),
                                    s->nodes_.buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(),
                                    s->env_, s->materials_.buf(), s->textures_.buf(), s->texture_atlas_.atlas(),
                                    s->lights_.buf(), s->li_indices_.buf(), (cl_uint)s->light_nodes_start_,
-                                   final_buf_, temp_buf_, prim_rays_buf_, secondary_rays_count_buf_)) return;
+                                   final_buf_, temp_buf_, prim_rays_buf_, rays_count_buf_[1])) return;
 
-        if (queue_.enqueueReadBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int),
-                                     &secondary_rays_count) != CL_SUCCESS) return;
+        //if (queue_.enqueueReadBuffer(secondary_rays_count_buf_, CL_TRUE, 0, sizeof(cl_int),
+        //                             &secondary_rays_count) != CL_SUCCESS) return;
 
-        queue_.finish();
+        //queue_.finish();
         auto time_secondary_shade_end = std::chrono::high_resolution_clock::now();
 
         secondary_sort_time += std::chrono::duration<double, std::micro>{ time_secondary_trace_start - time_secondary_sort_start };
@@ -607,6 +634,7 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
 
         std::swap(final_buf_, temp_buf_);
         std::swap(secondary_rays_buf_, prim_rays_buf_);
+        std::swap(rays_count_buf_[0], rays_count_buf_[1]);
     }
 
     stats_.time_primary_ray_gen_us += (unsigned long long)std::chrono::duration<double, std::micro>{ time_after_ray_gen - time_start }.count();
@@ -630,12 +658,7 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
     cl_int _clamp = (cam.pass_settings.flags & Clamp) ? 1 : 0;
     if (!kernel_Postprocess(clean_buf_, w_, h_, (cl_float)(1.0f / cam.gamma), _clamp, final_buf_)) return;
 
-    error = queue_.enqueueReadImage(final_buf_, CL_TRUE, {}, { (size_t)w_, (size_t)h_, 1 }, 0, 0, &frame_pixels_[0]);
-    if (error != CL_SUCCESS) return;
-
-    if (sh_data_size_ && (cam.pass_settings.flags & OutputSH)) {
-        error = queue_.enqueueReadBuffer(sh_data_clean_, CL_TRUE, 0, sizeof(shl1_data_t) * sh_data_size_, &sh_data_host_[0]);
-    }
+    host_data_dirty_ = true;
 }
 
 bool Ray::Ocl::Renderer::kernel_GeneratePrimaryRays(const cl_int iteration, const Ray::Ocl::camera_t &cam, const Ray::rect_t &rect, cl_int w, cl_int h, const cl::Buffer &halton, const cl::Buffer &out_rays) {
@@ -770,23 +793,23 @@ bool Ray::Ocl::Renderer::kernel_ShadePrimary(const pass_info_t &pi, const cl::Bu
     return queue_.enqueueNDRangeKernel(shade_primary_kernel_, { (size_t)rect.x, (size_t)rect.y }, global, local) == CL_SUCCESS;
 }
 
-bool Ray::Ocl::Renderer::kernel_ShadeSecondary(const pass_info_t &pi, const cl::Buffer &halton,
-                                               const cl::Buffer &intersections, const cl::Buffer &rays, int rays_count,
-                                               const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes,
+bool Ray::Ocl::Renderer::kernel_ShadeSecondary(const pass_info_t &pi, const cl::Buffer &in_rays_count, const cl::Buffer &halton,
+                                               const cl::Buffer &intersections, const cl::Buffer &rays,
+                                               int max_rays_count, const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes,
                                                const cl::Buffer &transforms, const cl::Buffer &vtx_indices, const cl::Buffer &vertices,
                                                const cl::Buffer &nodes, cl_uint node_index, const cl::Buffer &tris, const cl::Buffer &tri_indices,
                                                const environment_t &env, const cl::Buffer &materials, const cl::Buffer &textures, const cl::Image2DArray &texture_atlas,
                                                const cl::Buffer &lights, const cl::Buffer &li_indices, cl_uint light_node_index,
                                                const cl::Image2D &frame_buf, const cl::Image2D &frame_buf2,
                                                const cl::Buffer &secondary_rays, const cl::Buffer &secondary_rays_count) {
-    if (rays_count == 0) return true;
+    if (max_rays_count == 0) return true;
 
     cl_uint argc = 0;
     if (shade_secondary_kernel_.setArg(argc++, pi) != CL_SUCCESS ||
+        shade_secondary_kernel_.setArg(argc++, in_rays_count) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, halton) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, intersections) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, rays) != CL_SUCCESS ||
-        shade_secondary_kernel_.setArg(argc++, rays_count) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, mesh_instances) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, mi_indices) != CL_SUCCESS ||
         shade_secondary_kernel_.setArg(argc++, meshes) != CL_SUCCESS ||
@@ -813,10 +836,10 @@ bool Ray::Ocl::Renderer::kernel_ShadeSecondary(const pass_info_t &pi, const cl::
 
     const size_t group_size = std::min((size_t)64, max_work_group_size_);
 
-    const int remaining = (rays_count % group_size);
+    const int remaining = (max_rays_count % group_size);
     const int extend = remaining ? (int(group_size) - remaining) : 0;
 
-    const cl::NDRange global = { (size_t)(rays_count + extend) };
+    const cl::NDRange global = { (size_t)(max_rays_count + (group_size + extend)) };
     const cl::NDRange local = { group_size };
 
     return queue_.enqueueNDRangeKernel(shade_secondary_kernel_, cl::NullRange, global, local) == CL_SUCCESS;
@@ -908,7 +931,7 @@ bool Ray::Ocl::Renderer::kernel_TraceSecondaryRays(const cl::Buffer &rays, cl_in
     return queue_.enqueueNDRangeKernel(trace_secondary_rays_kernel_, cl::NullRange, global, local) == CL_SUCCESS;
 }
 
-bool Ray::Ocl::Renderer::kernel_TraceSecondaryRaysImg(const cl::Buffer &rays, cl_int rays_count,
+bool Ray::Ocl::Renderer::kernel_TraceSecondaryRaysImg(const cl::Buffer &rays, int rays_count_bound, const cl::Buffer &rays_count,
                                                       const cl::Buffer &mesh_instances, const cl::Buffer &mi_indices, const cl::Buffer &meshes, const cl::Buffer &transforms,
                                                       const cl::Image1DBuffer &nodes, cl_uint node_index, const cl::Buffer &tris, const cl::Buffer &tri_indices, const cl::Buffer &intersections) {
     cl_uint argc = 0;
@@ -928,11 +951,11 @@ bool Ray::Ocl::Renderer::kernel_TraceSecondaryRaysImg(const cl::Buffer &rays, cl
 
     const size_t group_size = trace_group_size_x_ * trace_group_size_y_;
 
-    const int remaining = (rays_count % group_size);
+    const int remaining = (rays_count_bound % group_size);
     const int extend = remaining ? (int(group_size) - remaining) : 0;
 
-    const cl::NDRange global = { (size_t)(rays_count + extend) };
-    const cl::NDRange local = { (size_t)(group_size) };
+    cl::NDRange global = { (size_t)(rays_count_bound + (group_size + extend)) };
+    cl::NDRange local = { (size_t)(group_size) };
 
     return queue_.enqueueNDRangeKernel(trace_secondary_rays_img_kernel_, cl::NullRange, global, local) == CL_SUCCESS;
 }

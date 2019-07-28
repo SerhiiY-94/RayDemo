@@ -131,7 +131,7 @@ void TraceSecondaryRays(__global const ray_packet_t *rays, int rays_count,
 }
 
 __kernel
-void TraceSecondaryRaysImg(__global const ray_packet_t *rays, int rays_count,
+void TraceSecondaryRaysImg(__global const ray_packet_t *rays, __global const uint *rays_count,
                            __global const mesh_instance_t *mesh_instances,
                            __global const uint *mi_indices, 
                            __global const mesh_t *meshes, __global const transform_t *transforms,
@@ -139,7 +139,7 @@ void TraceSecondaryRaysImg(__global const ray_packet_t *rays, int rays_count,
                            __global const tri_accel_t *tris, __global const uint *tri_indices, 
                            __global hit_data_t *out_prim_inters) {
     const int index = get_global_id(0);
-    if (index >= rays_count) return;
+    if (index >= *rays_count) return;
 
     const float4 orig_r_o = rays[index].o;
     const float4 orig_r_d = rays[index].d;
