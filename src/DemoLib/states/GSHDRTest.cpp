@@ -214,7 +214,7 @@ void GSHDRTest::Exit() {
 
 }
 
-void GSHDRTest::Draw(float dt_s) {
+void GSHDRTest::Draw(uint64_t dt_us) {
     using namespace Ren;
     using namespace GSHDRTestInternal;
 
@@ -399,11 +399,11 @@ void GSHDRTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSHDRTest::Update(int dt_ms) {
+void GSHDRTest::Update(uint64_t dt_us) {
 
 }
 
-void GSHDRTest::HandleInput(InputManager::Event evt) {
+void GSHDRTest::HandleInput(const InputManager::Event &evt) {
     switch (evt.type) {
     case InputManager::RAW_INPUT_P1_DOWN: {
 

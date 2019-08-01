@@ -322,7 +322,7 @@ void DemoApp::PollEvents() {
             return;
         }
         if (evt.type != InputManager::RAW_INPUT_NONE) {
-            evt.time_stamp = Sys::GetTicks() - (SDL_GetTicks() - e.common.timestamp);
+            evt.time_stamp = Sys::GetTimeMs() - (SDL_GetTicks() - e.common.timestamp);
             input_manager->AddRawInputEvent(evt);
         }
     }

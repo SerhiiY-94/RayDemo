@@ -177,7 +177,7 @@ void GSLightmapTest::Exit() {
 
 }
 
-void GSLightmapTest::Draw(float dt_s) {
+void GSLightmapTest::Draw(uint64_t dt_us) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     {   // update camera
@@ -192,7 +192,7 @@ void GSLightmapTest::Draw(float dt_s) {
         ray_scene_->SetCamera(0, cam_desc);
     }
 
-    auto t1 = Sys::GetTicks();
+    uint32_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_) {
         ray_renderer_->Clear();
@@ -354,7 +354,7 @@ void GSLightmapTest::Draw(float dt_s) {
     swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
-    auto dt_ms = int(Sys::GetTicks() - t1);
+    int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 
@@ -413,7 +413,7 @@ void GSLightmapTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSLightmapTest::Update(int dt_ms) {
+void GSLightmapTest::Update(uint64_t dt_ms) {
     using namespace Ren;
 
     const float Pi = 3.14159265358979323846f;
@@ -456,7 +456,7 @@ void GSLightmapTest::Update(int dt_ms) {
 
 }
 
-void GSLightmapTest::HandleInput(InputManager::Event evt) {
+void GSLightmapTest::HandleInput(const InputManager::Event &evt) {
     using namespace GSLightmapTestInternal;
     using namespace Ren;
 

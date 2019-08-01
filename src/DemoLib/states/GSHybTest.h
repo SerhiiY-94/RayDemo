@@ -79,9 +79,9 @@ public:
     void Enter() override;
     void Exit() override;
 
-    void Draw(float dt_s) override;
+    void Draw(uint64_t dt_us) override;
 
-    void Update(int dt_ms) override;
+    void Update(uint64_t dt_us) override;
 
-    void HandleInput(InputManager::Event) override;
+    void HandleInput(const InputManager::Event &evt) override;
 };

@@ -74,7 +74,7 @@ void GSSamplingTest::Exit() {
 
 }
 
-void GSSamplingTest::Draw(float dt_s) {
+void GSSamplingTest::Draw(uint64_t dt_us) {
     using namespace Ren;
     using namespace GSSamplingTestInternal;
 
@@ -273,11 +273,11 @@ void GSSamplingTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSSamplingTest::Update(int dt_ms) {
+void GSSamplingTest::Update(uint64_t dt_us) {
 
 }
 
-void GSSamplingTest::HandleInput(InputManager::Event evt) {
+void GSSamplingTest::HandleInput(const InputManager::Event &evt) {
     switch (evt.type) {
     case InputManager::RAW_INPUT_P1_DOWN: {
 

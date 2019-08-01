@@ -18,7 +18,7 @@ Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, int
 
     {
         // load config
-        Sys::AssetFile config_file("assets/config.json", Sys::AssetFile::IN);
+        Sys::AssetFile config_file("assets/config.json", Sys::AssetFile::FileIn);
         size_t config_file_size = config_file.size();
         std::unique_ptr<char[]> buf(new char[config_file_size]);
         config_file.Read(buf.get(), config_file_size);

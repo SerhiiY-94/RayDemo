@@ -156,7 +156,7 @@ void GSRayTest::Exit() {
 
 }
 
-void GSRayTest::Draw(float dt_s) {
+void GSRayTest::Draw(uint64_t dt_us) {
     {   // update camera
         Ray::camera_desc_t cam_desc;
         ray_scene_->GetCamera(0, cam_desc);
@@ -183,7 +183,7 @@ void GSRayTest::Draw(float dt_s) {
         ray_scene_->SetCamera(0, cam_desc);
     }
 
-    auto t1 = Sys::GetTicks();
+    uint32_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_ || last_invalidate_) {
         ray_renderer_->Clear();
@@ -302,7 +302,7 @@ void GSRayTest::Draw(float dt_s) {
     }
 #endif
 
-    auto dt_ms = int(Sys::GetTicks() - t1);
+    int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 
@@ -360,7 +360,7 @@ void GSRayTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSRayTest::Update(int dt_ms) {
+void GSRayTest::Update(uint64_t dt_us) {
     using namespace Ren;
 
     const float Pi = 3.14159265358979323846f;
@@ -371,7 +371,7 @@ void GSRayTest::Update(int dt_ms) {
     view_origin_ += view_dir_ * forward_speed_;
     view_origin_ += side * side_speed_;
 
-    invalidate_timeout_ -= dt_ms;
+    invalidate_timeout_ -= int(dt_us / 1000);
 
     if (forward_speed_ != 0 || side_speed_ != 0 || animate_) {
         invalidate_preview_ = true;
@@ -393,7 +393,7 @@ void GSRayTest::Update(int dt_ms) {
         _L = _L * rot_m3;*/
 
         static float angle = 0;
-        angle += 0.05f * dt_ms;
+        angle += 0.05f * (0.001f * dt_us);
 
         Mat4f tr(1.0f);
         tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
@@ -408,7 +408,7 @@ void GSRayTest::Update(int dt_ms) {
 
 }
 
-void GSRayTest::HandleInput(InputManager::Event evt) {
+void GSRayTest::HandleInput(const InputManager::Event &evt) {
     using namespace GSRayTestInternal;
     using namespace Ren;
 

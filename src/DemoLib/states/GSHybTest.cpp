@@ -163,7 +163,7 @@ void GSHybTest::Exit() {
 
 }
 
-void GSHybTest::Draw(float dt_s) {
+void GSHybTest::Draw(uint64_t dt_us) {
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
 
     {   // update camera
@@ -179,7 +179,7 @@ void GSHybTest::Draw(float dt_s) {
         cpu_scene_->SetCamera(0, cam_desc);
     }
 
-    auto t1 = Sys::GetTicks();
+    uint32_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_) {
         for (auto &t : gpu_tracers_) {
@@ -270,9 +270,9 @@ void GSHybTest::Draw(float dt_s) {
 
     if (!gpu_cpu_div_fac_dirty_) {
         if (cpu_total > gpu_total) {
-            gpu_cpu_div_fac_ += 0.02;
+            gpu_cpu_div_fac_ += 0.02f;
         } else {
-            gpu_cpu_div_fac_ -= 0.02;
+            gpu_cpu_div_fac_ -= 0.02f;
         }
         gpu_cpu_div_fac_dirty_ = true;
     }
@@ -423,7 +423,7 @@ void GSHybTest::Draw(float dt_s) {
     swBlitPixels(180, 4, 0, SW_UNSIGNED_BYTE, SW_RGB, 128, 1, &hor_line[0][0], 1);
 #endif
 
-    auto dt_ms = int(Sys::GetTicks() - t1);
+    int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 
@@ -482,7 +482,7 @@ void GSHybTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSHybTest::Update(int dt_ms) {
+void GSHybTest::Update(uint64_t dt_us) {
     using namespace Ren;
 
     const float Pi = 3.14159265358979323846f;
@@ -510,7 +510,7 @@ void GSHybTest::Update(int dt_ms) {
         _L = _L * rot_m3;*/
 
         static float angle = 0;
-        angle += 0.05f * dt_ms;
+        angle += 0.05f * (0.001f * dt_us);
 
         Mat4f tr(1.0f);
         tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
@@ -526,7 +526,7 @@ void GSHybTest::Update(int dt_ms) {
 
 }
 
-void GSHybTest::HandleInput(InputManager::Event evt) {
+void GSHybTest::HandleInput(const InputManager::Event &evt) {
     using namespace GSHybTestInternal;
     using namespace Ren;
 

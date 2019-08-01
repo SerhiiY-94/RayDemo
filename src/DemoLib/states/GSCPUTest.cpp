@@ -97,7 +97,7 @@ void GSCPUTest::Exit() {
 
 }
 
-void GSCPUTest::Draw(float dt_s) {
+void GSCPUTest::Draw(uint64_t dt_us) {
     using namespace GSCPUTestInternal;
 
 #if defined(USE_SW_RENDER)
@@ -161,11 +161,11 @@ void GSCPUTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSCPUTest::Update(int dt_ms) {
+void GSCPUTest::Update(uint64_t dt_us) {
 
 }
 
-void GSCPUTest::HandleInput(InputManager::Event evt) {
+void GSCPUTest::HandleInput(const InputManager::Event &evt) {
     switch (evt.type) {
     case InputManager::RAW_INPUT_P1_DOWN: {
 

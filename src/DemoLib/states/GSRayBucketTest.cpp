@@ -238,7 +238,7 @@ void GSRayBucketTest::Exit() {
     for (const auto &e : events_) e.wait();
 }
 
-void GSRayBucketTest::Draw(float dt_s) {
+void GSRayBucketTest::Draw(uint64_t dt_us) {
     using namespace GSRayBucketTestInternal;
 
     //renderer_->ClearColorAndDepth(0, 0, 0, 1);
@@ -256,7 +256,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         ray_scene_->SetCamera(0, cam_desc);
     }
 
-    auto t1 = Sys::GetTicks();
+    uint32_t t1 = Sys::GetTimeMs();
 
     if (invalidate_preview_) {
         ray_renderer_->Clear();
@@ -328,7 +328,7 @@ void GSRayBucketTest::Draw(float dt_s) {
         //sm->PopLater();
     }
 
-    auto dt_ms = int(Sys::GetTicks() - t1);
+    int dt_ms = int(Sys::GetTimeMs() - t1);
     time_acc_ += dt_ms;
     time_counter_++;
 
@@ -378,7 +378,7 @@ void GSRayBucketTest::Draw(float dt_s) {
     ctx_->ProcessTasks();
 }
 
-void GSRayBucketTest::Update(int dt_ms) {
+void GSRayBucketTest::Update(uint64_t dt_us) {
     using namespace Ren;
 
     const float Pi = 3.14159265358979323846f;
@@ -406,7 +406,7 @@ void GSRayBucketTest::Update(int dt_ms) {
         _L = _L * rot_m3;*/
 
         static float angle = 0;
-        angle += 0.05f * dt_ms;
+        angle += 0.05f * (0.001f * dt_us);
 
         Mat4f tr(1.0f);
         tr = Translate(tr, Vec3f{ 0, std::sin(angle * Pi / 180.0f) * 200.0f, 0 });
@@ -421,7 +421,7 @@ void GSRayBucketTest::Update(int dt_ms) {
 
 }
 
-void GSRayBucketTest::HandleInput(InputManager::Event evt) {
+void GSRayBucketTest::HandleInput(const InputManager::Event &evt) {
     using namespace GSRayBucketTestInternal;
     using namespace Ren;
 
