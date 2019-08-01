@@ -132,7 +132,7 @@ void Gui::Renderer::DrawImageQuad(const Ren::Texture2DRef &tex, const Ren::Vec2f
 
 void Gui::Renderer::DrawUIElement(const Ren::Texture2DRef &tex, ePrimitiveType prim_type,
                                   const std::vector<float> &pos, const std::vector<float> &uvs,
-                                  const std::vector<unsigned char> &indices) {
+                                  const std::vector<uint16_t> &indices) {
     using namespace UIRendererConstants;
 
     if (pos.empty()) return;
@@ -148,7 +148,7 @@ void Gui::Renderer::DrawUIElement(const Ren::Texture2DRef &tex, ePrimitiveType p
     swVertexAttribPointer(A_UV, sizeof(float) * 2, 0, (void *)&uvs[0]);
 
     if (prim_type == PRIM_TRIANGLE) {
-        swDrawElements(SW_TRIANGLES, (SWuint)indices.size(), SW_UNSIGNED_BYTE, &indices[0]);
+        swDrawElements(SW_TRIANGLES, (SWuint)indices.size(), SW_UNSIGNED_SHORT, &indices[0]);
     }
 }
 
