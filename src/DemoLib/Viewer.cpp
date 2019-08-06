@@ -57,8 +57,7 @@ Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, int
         AddComponent(SCENE_NAME_KEY, scene_name);
     }
 
-    {
-        // create ray renderer
+    {   // create ray renderer
         Ray::settings_t s;
         s.w = w;
         s.h = h;

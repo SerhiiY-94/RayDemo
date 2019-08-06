@@ -16,19 +16,19 @@ protected:
     const cl::CommandQueue &queue_;
     size_t max_img_buf_size_;
 
-    Ocl::Vector<bvh_node_t> nodes_;
-    Ocl::Vector<tri_accel_t> tris_;
-    Ocl::Vector<uint32_t> tri_indices_;
-    Ocl::Vector<transform_t> transforms_;
-    Ocl::Vector<mesh_t> meshes_;
+    Ocl::Vector<bvh_node_t>     nodes_;
+    Ocl::Vector<tri_accel_t>    tris_;
+    Ocl::Vector<uint32_t>       tri_indices_;
+    Ocl::Vector<transform_t>    transforms_;
+    Ocl::Vector<mesh_t>         meshes_;
     Ocl::Vector<mesh_instance_t> mesh_instances_;
-    Ocl::Vector<uint32_t> mi_indices_;
-    Ocl::Vector<vertex_t> vertices_;
-    Ocl::Vector<uint32_t> vtx_indices_;
+    Ocl::Vector<uint32_t>       mi_indices_;
+    Ocl::Vector<vertex_t>       vertices_;
+    Ocl::Vector<uint32_t>       vtx_indices_;
 
-    Ocl::Vector<material_t> materials_;
-    Ocl::Vector<texture_t> textures_;
-    Ocl::TextureAtlas texture_atlas_;
+    Ocl::Vector<material_t>     materials_;
+    Ocl::Vector<texture_t>      textures_;
+    Ocl::TextureAtlas           texture_atlas_;
 
     Ocl::Vector<light_t> lights_;
     Ocl::Vector<uint32_t> li_indices_;
@@ -40,6 +40,9 @@ protected:
 
     uint32_t default_env_texture_;
     uint32_t default_normals_texture_;
+
+    // Cache root node
+    bvh_node_t                  root_node_;
 
     void RemoveNodes(uint32_t node_index, uint32_t node_count);
     void RebuildMacroBVH();

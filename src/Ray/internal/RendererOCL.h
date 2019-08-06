@@ -31,20 +31,22 @@ protected:
     size_t tri_rast_x_, tri_rast_y_;
     size_t tri_bin_size_;
 
+    size_t device_compute_units_;
+
     cl::Context context_;
     cl::Program program_;
 
     cl::CommandQueue queue_;
 
     cl::Kernel prim_rays_gen_kernel_, sample_mesh_reset_bins_kernel_, sample_mesh_bin_stage_kernel_, sample_mesh_raster_stage_kernel_, 
-    texture_debug_page_kernel_,
-    shade_primary_kernel_, shade_secondary_kernel_, trace_primary_rays_kernel_, trace_primary_rays_img_kernel_,
-    compute_ray_hashes_kernel_, set_head_flags_kernel_, excl_scan_kernel_,
-    incl_scan_kernel_, add_partial_sums_kernel_, init_chunk_hash_and_base_kernel_,
-    init_chunk_size_kernel_, init_skel_and_head_flags_kernel_, init_count_table_kernel_,
-    write_sorted_chunks_kernel_, excl_seg_scan_kernel_, incl_seg_scan_kernel_, add_seg_partial_sums_kernel_,
-    reorder_rays_kernel_, trace_secondary_rays_kernel_, trace_secondary_rays_img_kernel_, mix_incremental_kernel_, post_process_kernel_,
-        reset_sample_data_kernel_, store_sh_coeffs_kernel_, compute_sh_data_kernel_, mix_sh_data_kernel_;
+               texture_debug_page_kernel_,
+               shade_primary_kernel_, shade_secondary_kernel_, trace_primary_rays_kernel_, trace_primary_rays_img_kernel_, trace_rays_img_pers_kernel_,
+               compute_ray_hashes_kernel_, set_head_flags_kernel_, excl_scan_kernel_,
+               incl_scan_kernel_, add_partial_sums_kernel_, init_chunk_hash_and_base_kernel_,
+               init_chunk_size_kernel_, init_skel_and_head_flags_kernel_, init_count_table_kernel_,
+               write_sorted_chunks_kernel_, excl_seg_scan_kernel_, incl_seg_scan_kernel_, add_seg_partial_sums_kernel_,
+               reorder_rays_kernel_, trace_secondary_rays_kernel_, trace_secondary_rays_img_kernel_, mix_incremental_kernel_, post_process_kernel_,
+               reset_sample_data_kernel_, store_sh_coeffs_kernel_, compute_sh_data_kernel_, mix_sh_data_kernel_;
 
     cl::Buffer prim_rays_buf_, prim_inters_buf_, color_table_buf_,
                secondary_rays_buf_, rays_count_buf_[2];

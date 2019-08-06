@@ -85,14 +85,15 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
     //if (device_ != devices[0]) throw std::runtime_error("Cannot create OpenCL renderer!");
 
     // get properties
-    max_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-    max_clock_ = device_.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>();
-    mem_size_ = device_.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    max_compute_units_  = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    max_clock_          = device_.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>();
+    mem_size_           = device_.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
 
-    max_work_group_size_ = device_.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+    max_work_group_size_    = device_.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+    device_compute_units_   = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
 
-    scan_portion_ = max_work_group_size_;
-    seg_scan_portion_ = std::min(max_work_group_size_, (size_t)64);
+    scan_portion_       = max_work_group_size_;
+    seg_scan_portion_   = std::min(max_work_group_size_, (size_t)64);
 
     // local group size 8x8 seems to be optimal for traversing BVH in most scenes
     trace_group_size_x_ = 8;
@@ -113,9 +114,7 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
     }
 
-    {
-        // load kernels
-
+    {   // load kernels
         std::ostringstream s;
         s.imbue(std::locale::classic());
 
@@ -172,6 +171,11 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         s << "#define USE_STACKLESS_BVH_TRAVERSAL\n";
 #endif
 
+        // test test test
+        s << "#define TRACE_BATCH_SIZE "        << 256 << "\n";
+        s << "#define TRACE_DIM_X "             << 64 << "\n";
+        s << "#define TRACE_DIM_Y "             << 4 << "\n";
+
         std::string cl_src_defines = s.str();
 
         cl_int error = CL_SUCCESS;
@@ -195,7 +199,7 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
 
         error = program_.build(build_opts.c_str());
         if (error == CL_INVALID_BUILD_OPTIONS) {
-            // -cl-strict-aliasing not supported sometimes, try to build without it
+            // -cl-strict-aliasing is not supported sometimes, try to build again without it
             build_opts = "-Werror -cl-mad-enable -cl-no-signed-zeros -cl-fast-relaxed-math -cl-std=CL1.2 ";
             program_ = cl::Program(context_, srcs, &error);
             if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
@@ -228,6 +232,10 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
         trace_primary_rays_img_kernel_ = cl::Kernel(program_, "TracePrimaryRaysImg", &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
+
+        trace_rays_img_pers_kernel_ = cl::Kernel(program_, "TraceRaysImg_Persistent", &error);
+        if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
+
         compute_ray_hashes_kernel_ = cl::Kernel(program_, "ComputeRayHashes", &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
         set_head_flags_kernel_ = cl::Kernel(program_, "SetHeadFlags", &error);
@@ -279,6 +287,11 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         reset_sample_data_kernel_ = cl::Kernel(program_, "ResetSampleData", &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
+        // test test test
+        size_t warp_size = trace_rays_img_pers_kernel_.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_);
+        size_t group_size = trace_rays_img_pers_kernel_.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device_);
+        volatile int ii = 0;
+
 #if !defined(NDEBUG)
         cl::Kernel types_check = cl::Kernel(program_, "TypesCheck", &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
@@ -318,10 +331,10 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
         //secondary_inters_count_buf_ = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
         //if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
-        rays_count_buf_[0] = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
+        rays_count_buf_[0] = cl::Buffer(context_, CL_MEM_READ_WRITE /*| CL_MEM_HOST_WRITE_ONLY*/, sizeof(cl_int) * 2, nullptr, &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
-        rays_count_buf_[1] = cl::Buffer(context_, CL_MEM_READ_WRITE, sizeof(cl_int), nullptr, &error);
+        rays_count_buf_[1] = cl::Buffer(context_, CL_MEM_READ_WRITE /*| CL_MEM_HOST_WRITE_ONLY*/, sizeof(cl_int) * 2, nullptr, &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
         uniform_buf_ = cl::Buffer(context_, CL_MEM_READ_ONLY, UniformBufSize, nullptr, &error);
@@ -335,7 +348,7 @@ Ray::Ocl::Renderer::Renderer(int w, int h, int platform_index, int device_index)
             color_table.push_back( { float(i) / 63, float(i) / 63, float(i) / 63, 1 });
         }
 
-        color_table_buf_ = cl::Buffer(context_, CL_MEM_READ_ONLY, sizeof(pixel_color_t) * color_table.size(), nullptr, &error);
+        color_table_buf_ = cl::Buffer(context_, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, sizeof(pixel_color_t) * color_table.size(), nullptr, &error);
         if (error != CL_SUCCESS) throw std::runtime_error("Cannot create OpenCL renderer!");
 
         error = queue_.enqueueWriteBuffer(color_table_buf_, CL_TRUE, 0, sizeof(pixel_color_t) * color_table.size(), &color_table[0]);
@@ -446,11 +459,7 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
     if (!s) return;
 
     uint32_t macro_tree_root = s->macro_nodes_start_;
-    bvh_node_t root_node;
-
-    if (macro_tree_root != 0xffffffff) {
-        s->nodes_.Get(macro_tree_root, root_node);
-    }
+    bvh_node_t root_node = s->root_node_;
 
     cl_float3 root_min = { root_node.bbox_min[0], root_node.bbox_min[1], root_node.bbox_min[2] },
               root_max = { root_node.bbox_max[0], root_node.bbox_max[1], root_node.bbox_max[2] };
@@ -523,9 +532,8 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
     }
 
     {   // Reset secondary rays counter
-        static cl_int zero = 0;
-        if (queue_.enqueueWriteBuffer(rays_count_buf_[0], CL_FALSE, 0, sizeof(cl_int),
-                                      &zero) != CL_SUCCESS) return;
+        static cl_int zeros[] = { 0, 0 };
+        if (queue_.enqueueWriteBuffer(rays_count_buf_[0], CL_FALSE, 0, sizeof(zeros), zeros) != CL_SUCCESS) return;
     }
 
     //queue_.finish();
@@ -588,9 +596,38 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
         auto time_secondary_trace_start = std::chrono::high_resolution_clock::now();
 
         if (s->nodes_.img_buf().get() != nullptr) {
+#if 1
             if (!kernel_TraceSecondaryRaysImg(secondary_rays_buf_, max_secondary_rays_count, rays_count_buf_[0],
                                               s->mesh_instances_.buf(), s->mi_indices_.buf(), s->meshes_.buf(), s->transforms_.buf(),
                                               s->nodes_.img_buf(), (cl_uint)macro_tree_root, s->tris_.buf(), s->tri_indices_.buf(), prim_inters_buf_)) return;
+#else
+            cl_uint argc = 0;
+            if (trace_rays_img_pers_kernel_.setArg(argc++, secondary_rays_buf_) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, rays_count_buf_[0]) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->mesh_instances_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->mi_indices_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->meshes_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->transforms_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->nodes_.img_buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, (cl_uint)macro_tree_root) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->tris_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, s->tri_indices_.buf()) != CL_SUCCESS ||
+                trace_rays_img_pers_kernel_.setArg(argc++, prim_inters_buf_) != CL_SUCCESS) {
+                return;
+            }
+
+            cl::NDRange global = { size_t(64 * 40), size_t(4) };
+            cl::NDRange local = { size_t(64), size_t(4) };
+
+            static int counter = 0;
+            if (++counter > 21) {
+                //__debugbreak();
+            }
+
+            if (queue_.enqueueNDRangeKernel(trace_rays_img_pers_kernel_, cl::NullRange, global, local) != CL_SUCCESS) {
+                return;
+            }
+#endif
         } else {
             /*if (!kernel_TraceSecondaryRays(secondary_rays_buf_, secondary_rays_count,
                                            s->mesh_instances_.buf(), s->mi_indices_.buf(), s->meshes_.buf(), s->transforms_.buf(),
@@ -598,8 +635,8 @@ void Ray::Ocl::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
         }
 
         {   // Reset secondary rays counter
-            static cl_int zero = 0;
-            if (queue_.enqueueWriteBuffer(rays_count_buf_[1], CL_FALSE, 0, sizeof(cl_int), &zero) != CL_SUCCESS) return;
+            static cl_int zeros[] = { 0, 0 };
+            if (queue_.enqueueWriteBuffer(rays_count_buf_[1], CL_FALSE, 0, sizeof(zeros), zeros) != CL_SUCCESS) return;
         }
 
 #if 0

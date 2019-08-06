@@ -161,4 +161,73 @@ void TraceSecondaryRaysImg(__global const ray_packet_t *rays, __global const uin
     out_prim_inters[index] = inter;
 }
 
+__kernel
+void TraceRaysImg_Persistent(__global const ray_packet_t *rays, __global int *ray_counters,
+                             __global const mesh_instance_t *mesh_instances, __global const uint *mi_indices, 
+                             __global const mesh_t *meshes, __global const transform_t *transforms,
+                             __read_only image1d_buffer_t nodes, uint node_index,
+                             __global const tri_accel_t *tris, __global const uint *tri_indices, 
+                             __global hit_data_t *out_prim_inters) {
+    const int global_pool_ray_count = ray_counters[0];
+    __global int *global_pool_next_ray = &ray_counters[1];
+
+    __local volatile int local_next_ray[TRACE_DIM_Y];
+    __local volatile int local_ray_count[TRACE_DIM_Y];
+
+    __local volatile int *local_pool_next_ray = &local_next_ray[get_local_id(1)];
+    __local volatile int *local_pool_ray_count = &local_ray_count[get_local_id(1)];
+
+    if (get_local_id(0) == 0u) {
+        (*local_pool_ray_count) = 0;
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    while (true) {
+        if (get_local_id(0) == 0u && (*local_pool_ray_count) <= 0) {
+            (*local_pool_next_ray) = atomic_add(global_pool_next_ray, TRACE_BATCH_SIZE);
+            (*local_pool_ray_count) = TRACE_BATCH_SIZE;
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        const int cur_ray_index = (*local_pool_next_ray) + get_local_id(0);
+        if (cur_ray_index >= global_pool_ray_count) {
+            return;
+        }
+
+        if (get_local_id(0) == 0u) {
+            (*local_pool_next_ray) += TRACE_DIM_X;
+            (*local_pool_ray_count) -= TRACE_DIM_X;
+        }
+        //barrier(CLK_LOCAL_MEM_FENCE);
+
+        const float4 orig_r_o = rays[cur_ray_index].o;
+        const float4 orig_r_d = rays[cur_ray_index].d;
+        const float3 orig_inv_d = safe_invert(orig_r_d.xyz);
+
+        hit_data_t inter;
+        inter.mask = 0;
+        inter.t = FLT_MAX;
+        inter.ray_id = (float2)(orig_r_o.w, orig_r_d.w);
+
+#if 1
+        uint stack[MAX_STACK_SIZE];
+
+        if (node_index != 0xffffffff) {
+            Traverse_MacroTreeImg_WithPrivateStack(orig_r_o.xyz, orig_r_d.xyz, orig_inv_d, mesh_instances, mi_indices, meshes, transforms,
+                                                   nodes, node_index, tris, tri_indices, stack, &inter);
+        }
+#else
+        __local uint shared_stack[MAX_STACK_SIZE * TRACE_DIM_X * TRACE_DIM_Y];
+        __local uint *stack = &shared_stack[MAX_STACK_SIZE * (get_local_id(1) * TRACE_DIM_X + get_local_id(0))];
+
+        if (node_index != 0xffffffff) {
+            Traverse_MacroTreeImg_WithLocalStack(orig_r_o.xyz, orig_r_d.xyz, orig_inv_d, mesh_instances, mi_indices, meshes, transforms,
+                                                 nodes, node_index, tris, tri_indices, stack, &inter);
+        }
+#endif
+
+        out_prim_inters[cur_ray_index] = inter;
+    }
+}
+
 )"
