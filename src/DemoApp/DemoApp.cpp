@@ -125,7 +125,6 @@ void DemoApp::Frame() {
 
 #if !defined(__ANDROID__)
 int DemoApp::Run(const std::vector<std::string> &args) {
-
     int w = 640, h = 360;
     scene_name_ = "assets/scenes/sponza_simple.json";
     nogpu_ = false;
