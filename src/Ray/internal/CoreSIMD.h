@@ -119,7 +119,7 @@ bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const sim
                                              const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                              const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter);
 template <int S>
-bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *oct_nodes, uint32_t node_index,
+bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *mnodes, uint32_t node_index,
                                              const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                              const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter);
 template <int S>
@@ -127,7 +127,7 @@ bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t<S> &r, const simd_iv
                                          const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                          const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter, simd_ivec<S> &is_solid_hit);
 template <int S>
-bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *oct_nodes, uint32_t node_index,
+bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *mnodes, uint32_t node_index,
                                          const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                          const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter, simd_ivec<S> &is_solid_hit);
 // traditional bvh traversal with stack for inner nodes
@@ -135,13 +135,13 @@ template <int S>
 bool Traverse_MicroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const bvh_node_t *nodes, uint32_t node_index,
                                              const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t<S> &inter);
 template <int S>
-bool Traverse_MicroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], int i, const mbvh_node_t *oct_nodes, uint32_t node_index,
+bool Traverse_MicroTree_WithStack_ClosestHit(const float ro[3], const float rd[3], int i, const mbvh_node_t *mnodes, uint32_t node_index,
                                              const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t<S> &inter);
 template <int S>
 bool Traverse_MicroTree_WithStack_AnyHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const bvh_node_t *nodes, uint32_t node_index,
                                          const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t<S> &inter, simd_ivec<S> &is_solid_hit);
 template <int S>
-bool Traverse_MicroTree_WithStack_AnyHit(const float ro[3], const float rd[3], int i, const mbvh_node_t *oct_nodes, uint32_t node_index,
+bool Traverse_MicroTree_WithStack_AnyHit(const float ro[3], const float rd[3], int i, const mbvh_node_t *mnodes, uint32_t node_index,
                                          const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t<S> &inter, simd_ivec<S> &is_solid_hit);
 
 // BRDFs
@@ -2792,8 +2792,8 @@ Ray::NS::simd_fvec<S> Ray::NS::ComputeVisibility(const simd_fvec<S> p1[3], const
 
         simd_ivec<S> is_solid_hit = { 0 };
 
-        if (sc.oct_nodes) {
-            Traverse_MacroTree_WithStack_AnyHit(sh_r, ikeep_going, sc.oct_nodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.tris, sc.tri_indices, sh_inter, is_solid_hit);
+        if (sc.mnodes) {
+            //Traverse_MacroTree_WithStack_AnyHit(sh_r, ikeep_going, sc.mnodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.mtris, sc.tri_indices, sh_inter, is_solid_hit);
         } else {
             Traverse_MacroTree_WithStack_AnyHit(sh_r, ikeep_going, sc.nodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.tris, sc.tri_indices, sh_inter, is_solid_hit);
         }
@@ -2974,7 +2974,7 @@ void Ray::NS::ComputeDirectLighting(const simd_fvec<S> I[3], const simd_fvec<S> 
                                       P[1] + HIT_BIAS * plane_N[1],
                                       P[2] + HIT_BIAS * plane_N[2] };
 
-    if (sc.oct_nodes) {
+    if (sc.mnodes) {
         const int LanesCount = 8 / S;
 
         for (int ri = 0; ri < S; ri++) {
@@ -2993,16 +2993,16 @@ void Ray::NS::ComputeDirectLighting(const simd_fvec<S> I[3], const simd_fvec<S> 
             while (stack_size) {
                 uint32_t cur = stack[--stack_size];
 
-                if (!is_leaf_node(sc.oct_nodes[cur])) {
+                if (!is_leaf_node(sc.mnodes[cur])) {
                     simd_fvec<S> bbox_min[LanesCount][3], bbox_max[LanesCount][3];
 
                     ITERATE(LanesCount, {
-                        bbox_min[i][0] = simd_fvec<S>(sc.oct_nodes[cur].bbox_min[0] + i * S, simd_mem_aligned);
-                        bbox_min[i][1] = simd_fvec<S>(sc.oct_nodes[cur].bbox_min[1] + i * S, simd_mem_aligned);
-                        bbox_min[i][2] = simd_fvec<S>(sc.oct_nodes[cur].bbox_min[2] + i * S, simd_mem_aligned);
-                        bbox_max[i][0] = simd_fvec<S>(sc.oct_nodes[cur].bbox_max[0] + i * S, simd_mem_aligned);
-                        bbox_max[i][1] = simd_fvec<S>(sc.oct_nodes[cur].bbox_max[1] + i * S, simd_mem_aligned);
-                        bbox_max[i][2] = simd_fvec<S>(sc.oct_nodes[cur].bbox_max[2] + i * S, simd_mem_aligned);
+                        bbox_min[i][0] = simd_fvec<S>(sc.mnodes[cur].bbox_min[0] + i * S, simd_mem_aligned);
+                        bbox_min[i][1] = simd_fvec<S>(sc.mnodes[cur].bbox_min[1] + i * S, simd_mem_aligned);
+                        bbox_min[i][2] = simd_fvec<S>(sc.mnodes[cur].bbox_min[2] + i * S, simd_mem_aligned);
+                        bbox_max[i][0] = simd_fvec<S>(sc.mnodes[cur].bbox_max[0] + i * S, simd_mem_aligned);
+                        bbox_max[i][1] = simd_fvec<S>(sc.mnodes[cur].bbox_max[1] + i * S, simd_mem_aligned);
+                        bbox_max[i][2] = simd_fvec<S>(sc.mnodes[cur].bbox_max[2] + i * S, simd_mem_aligned);
                     })
 
                     simd_ivec<S> res_mask[LanesCount];
@@ -3011,7 +3011,7 @@ void Ray::NS::ComputeDirectLighting(const simd_fvec<S> I[3], const simd_fvec<S> 
                     const int *_res_mask = &res_mask[0][0];
 
                     ITERATE_8({
-                        stack[stack_size] = sc.oct_nodes[cur].child[i];
+                        stack[stack_size] = sc.mnodes[cur].child[i];
                         stack_size -= _res_mask[i];
                     })
 
@@ -3020,8 +3020,8 @@ void Ray::NS::ComputeDirectLighting(const simd_fvec<S> I[3], const simd_fvec<S> 
                         assert(stack[i] != 0x7fffffff && "Invalid index!");
                     }
                 } else {
-                    uint32_t prim_index = (sc.oct_nodes[cur].child[0] & PRIM_INDEX_BITS);
-                    for (uint32_t li = prim_index; li < prim_index + sc.oct_nodes[cur].child[1]; li++) {
+                    uint32_t prim_index = (sc.mnodes[cur].child[0] & PRIM_INDEX_BITS);
+                    for (uint32_t li = prim_index; li < prim_index + sc.mnodes[cur].child[1]; li++) {
                         const light_t &l = sc.lights[sc.li_indices[li]];
 
                         simd_fvec<S> L = { 0.0f };

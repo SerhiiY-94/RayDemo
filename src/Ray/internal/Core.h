@@ -35,6 +35,29 @@ struct tri_accel_t {
 };
 static_assert(sizeof(tri_accel_t) == 48, "!");
 
+extern const tri_accel_t InvalidTriangle;
+
+struct mtri_accel_t {
+    float nu[8], nv[8];
+    float np[8];
+    float pu[8], pv[8];
+    int32_t ci[8];
+    float e0u[8], e0v[8];
+    float e1u[8], e1v[8];
+    uint32_t mi[8], back_mi[8];
+
+    void init(const tri_accel_t &tri, int i) {
+        nu[i] = tri.nu; nv[i] = tri.nv;
+        np[i] = tri.np;
+        pu[i] = tri.pu; pv[i] = tri.pv;
+        ci[i] = tri.ci;
+        e0u[i] = tri.e0u; e0v[i] = tri.e0v;
+        e1u[i] = tri.e1u; e1v[i] = tri.e1v;
+        mi[i] = tri.mi; back_mi[i] = tri.back_mi;
+    }
+};
+static_assert(sizeof(mtri_accel_t) == 384, "!");
+
 const uint8_t TRI_W_BITS = 0b00000011;
 const uint8_t TRI_AXIS_ALIGNED_BIT = 0b00000100;
 const uint8_t TRI_INV_NORMAL_BIT = 0b00001000;
@@ -173,7 +196,7 @@ bool PreprocessTri(const float *p, int stride, tri_accel_t *acc);
 void ExtractPlaneNormal(const tri_accel_t &tri, float *out_normal);
 
 // Builds BVH for mesh and precomputes triangle data
-uint32_t PreprocessMesh(const float *attrs, const uint32_t *indices, size_t indices_count, eVertexLayout layout, int base_vertex,
+uint32_t PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, size_t vtx_indices_count, eVertexLayout layout, int base_vertex,
                         const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes, std::vector<tri_accel_t> &out_tris, std::vector<uint32_t> &out_indices);
 
 // Recursively builds linear bvh for a set of primitives
@@ -298,8 +321,9 @@ struct scene_data_t {
     const uint32_t          *vtx_indices;
     const vertex_t          *vertices;
     const bvh_node_t        *nodes;
-    const mbvh_node_t       *oct_nodes;
+    const mbvh_node_t       *mnodes;
     const tri_accel_t       *tris;
+    const mtri_accel_t      *mtris;
     const uint32_t          *tri_indices;
     const material_t        *materials;
     const texture_t         *textures;

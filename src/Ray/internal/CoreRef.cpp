@@ -40,6 +40,39 @@ force_inline void _IntersectTri(const ray_packet_t &r, const tri_accel_t &tri, u
     }
 }
 
+force_inline void _IntersectMTri(const ray_packet_t &r, const mtri_accel_t &tri, uint32_t j, uint32_t i, hit_data_t &inter) {
+    const int _next_u[] = { 1, 0, 0 },
+              _next_v[] = { 2, 2, 1 };
+
+    int iw = tri.ci[i] & Ray::TRI_W_BITS,
+        iu = _next_u[iw], iv = _next_v[iw];
+
+    float det = r.d[iu] * tri.nu[i] + r.d[iv] * tri.nv[i] + r.d[iw];
+    float dett = tri.np[i] - (r.o[iu] * tri.nu[i] + r.o[iv] * tri.nv[i] + r.o[iw]);
+    float Du = r.d[iu] * dett - (tri.pu[i] - r.o[iu]) * det;
+    float Dv = r.d[iv] * dett - (tri.pv[i] - r.o[iv]) * det;
+    float detu = tri.e1v[i] * Du - tri.e1u[i] * Dv;
+    float detv = tri.e0u[i] * Dv - tri.e0v[i] * Du;
+
+    float tmpdet0 = det - detu - detv;
+    //if ((tmpdet0 >= 0 && detu >= 0 && detv >= 0) || (tmpdet0 <= 0 && detu <= 0 && detv <= 0)) {
+    if ((tmpdet0 > -HIT_EPS && detu > -HIT_EPS && detv > -HIT_EPS) ||
+        (tmpdet0 < HIT_EPS && detu < HIT_EPS && detv < HIT_EPS)) {
+        float rdet = 1.0f / det;
+        float t = dett * rdet;
+        float u = detu * rdet;
+        float v = detv * rdet;
+
+        if (t > 0 && t < inter.t) {
+            inter.mask_values[0] = 0xffffffff;
+            inter.prim_indices[0] = j + i;
+            inter.t = t;
+            inter.u = u;
+            inter.v = v;
+        }
+    }
+}
+
 force_inline uint32_t near_child(const ray_packet_t &r, const bvh_node_t &node) {
     return r.d[node.prim_count >> 30] < 0 ? (node.right_child & RIGHT_CHILD_BITS) : node.left_child;
 }
@@ -752,6 +785,27 @@ bool Ray::Ref::IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel_t
     return inter.mask_values[0] != 0;
 }
 
+bool Ray::Ref::IntersectTris_ClosestHit(const ray_packet_t &r, const mtri_accel_t *mtris, const uint32_t *indices, int first_tri, int num_tris, int obj_index, hit_data_t &out_inter) {
+    hit_data_t inter{ Uninitialize };
+    inter.mask_values[0] = 0;
+    inter.obj_indices[0] = obj_index;
+    inter.t = out_inter.t;
+
+    for (int i = first_tri; i < first_tri + num_tris; i++) {
+        const int j = i / 8, k = i % 8;
+        _IntersectMTri(r, mtris[j], j * 8, k, inter);
+    }
+
+    out_inter.mask_values[0] |= inter.mask_values[0];
+    out_inter.obj_indices[0] = inter.mask_values[0] ? inter.obj_indices[0] : out_inter.obj_indices[0];
+    out_inter.prim_indices[0] = inter.mask_values[0] ? indices[inter.prim_indices[0]] : out_inter.prim_indices[0];
+    out_inter.t = inter.t; // already contains min value
+    out_inter.u = inter.mask_values[0] ? inter.u : out_inter.u;
+    out_inter.v = inter.mask_values[0] ? inter.v : out_inter.v;
+
+    return inter.mask_values[0] != 0;
+}
+
 bool Ray::Ref::IntersectTris_AnyHit(const ray_packet_t &r, const tri_accel_t *tris, int num_tris, int obj_index, hit_data_t &out_inter) {
     hit_data_t inter;
     inter.obj_indices[0] = obj_index;
@@ -1106,7 +1160,7 @@ bool Ray::Ref::Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t &r, co
 
 bool Ray::Ref::Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t &r, const mbvh_node_t *nodes, uint32_t root_index,
                                                        const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                                       const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter) {
+                                                       const mtri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter) {
     bool res = false;
 
     float inv_d[3];
@@ -1244,7 +1298,7 @@ bool Ray::Ref::Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t &r, const 
 
 bool Ray::Ref::Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t &r, const mbvh_node_t *nodes, uint32_t root_index,
                                                    const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                                   const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter) {
+                                                   const mtri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter) {
     bool res = false;
 
     const int ray_dir_oct = ((r.d[2] > 0.0f) << 2) | ((r.d[1] > 0.0f) << 1) | (r.d[0] > 0.0f);
@@ -1333,7 +1387,8 @@ TRAVERSE:
                 const float _inv_d[3] = { 1.0f / _r.d[0], 1.0f / _r.d[1], 1.0f / _r.d[2] };
                 bool hit_found = Traverse_MicroTree_WithStack_ClosestHit(_r, _inv_d, nodes, m.node_index, tris, tri_indices, (int)mi_indices[i], inter);
                 res |= hit_found;
-                if (hit_found && (tris[inter.prim_indices[0]].ci & TRI_SOLID_BIT)) {
+#pragma warning("Fix this!")
+                if (hit_found /*&& (tris[inter.prim_indices[0]].ci & TRI_SOLID_BIT)*/) {
                     return true;
                 }
             }
@@ -1369,7 +1424,7 @@ bool Ray::Ref::Traverse_MicroTree_WithStack_ClosestHit(const ray_packet_t &r, co
 }
 
 bool Ray::Ref::Traverse_MicroTree_WithStack_ClosestHit(const ray_packet_t &r, const float inv_d[3], const mbvh_node_t *nodes, uint32_t root_index,
-                                                       const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter) {
+                                                       const mtri_accel_t *mtris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter) {
     bool res = false;
 
     TraversalStack st;
@@ -1437,7 +1492,8 @@ TRAVERSE:
                 goto TRAVERSE;
             }
         } else {
-            res |= IntersectTris_ClosestHit(r, tris, &tri_indices[nodes[cur].child[0] & PRIM_INDEX_BITS], nodes[cur].child[1], obj_index, inter);
+            uint32_t tri_index = nodes[cur].child[0] & PRIM_INDEX_BITS;
+            res |= IntersectTris_ClosestHit(r, mtris, tri_indices, tri_index, nodes[cur].child[1], obj_index, inter);
         }
     }
 
@@ -1798,8 +1854,8 @@ float Ray::Ref::ComputeVisibility(const simd_fvec3 &p1, const simd_fvec3 &p2, co
         hit_data_t sh_inter;
         sh_inter.t = dist;
 
-        if (sc.oct_nodes) {
-            Traverse_MacroTree_WithStack_AnyHit(r, sc.oct_nodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.tris, sc.tri_indices, sh_inter);
+        if (sc.mnodes) {
+            Traverse_MacroTree_WithStack_AnyHit(r, sc.mnodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.mtris, sc.tri_indices, sh_inter);
         } else {
             Traverse_MacroTree_WithStack_AnyHit(r, sc.nodes, node_index, sc.mesh_instances, sc.mi_indices, sc.meshes, sc.transforms, sc.tris, sc.tri_indices, sh_inter);
         }
@@ -1929,23 +1985,23 @@ Ray::Ref::simd_fvec3 Ray::Ref::ComputeDirectLighting(const simd_fvec3 &I, const 
         stack[stack_size++] = light_node_index;
     }
 
-    if (sc.oct_nodes) {
+    if (sc.mnodes) {
         while (stack_size) {
             uint32_t cur = stack[--stack_size];
 
-            if (!is_leaf_node(sc.oct_nodes[cur])) {
+            if (!is_leaf_node(sc.mnodes[cur])) {
                 bool res[8];
                 for (int i = 0; i < 8; i++) {
-                    res[i] = bbox_test_oct(value_ptr(P), sc.oct_nodes[cur], i);
+                    res[i] = bbox_test_oct(value_ptr(P), sc.mnodes[cur], i);
                 }
 
                 for (int i = 0; i < 8; i++) {
                     if (!res[i]) continue;
-                    stack[stack_size++] = sc.oct_nodes[cur].child[i];
+                    stack[stack_size++] = sc.mnodes[cur].child[i];
                 }
             } else {
-                uint32_t prim_index = (sc.oct_nodes[cur].child[0] & PRIM_INDEX_BITS);
-                for (uint32_t i = prim_index; i < prim_index + sc.oct_nodes[cur].child[1]; i++) {
+                uint32_t prim_index = (sc.mnodes[cur].child[0] & PRIM_INDEX_BITS);
+                for (uint32_t i = prim_index; i < prim_index + sc.mnodes[cur].child[1]; i++) {
                     const light_t &l = sc.lights[sc.li_indices[i]];
                     AcumulateLightContribution(l, I, P, N, B, plane_N, sc, node_index, tex_atlas, sigma, halton, hi, rand_hash2, rand_offset, rand_offset2, col);
                 }
