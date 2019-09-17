@@ -321,7 +321,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin), 3 * sizeof(float));
     memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir), 3 * sizeof(float));
     cam_desc.fov = view_fov;
-    cam_desc.gamma = 2.2f;
+    cam_desc.gamma = 1.0f;
     cam_desc.focus_distance = 1.0f;
     cam_desc.focus_factor = 0.0f;
     cam_desc.clamp = true;
