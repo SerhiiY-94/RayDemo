@@ -163,6 +163,9 @@ void GSRayTest::Draw(uint64_t dt_us) {
 
         memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin_), 3 * sizeof(float));
         memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir_), 3 * sizeof(float));
+        cam_desc.up[0] = 0.0f;
+        cam_desc.up[1] = 1.0f;
+        cam_desc.up[2] = 0.0f;
         cam_desc.focus_distance = focal_distance_;
         cam_desc.focus_factor = 0.0f;
 

@@ -25,14 +25,16 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
     auto new_scene = r->CreateScene();
 
     bool view_targeted = false;
-    Ren::Vec3f view_origin, view_dir = { 0, 0, -1 }, view_target;
+    Ren::Vec3f view_origin, view_dir = { 0, 0, -1 }, view_up, view_target;
     float view_fov = 45.0f;
+    Ray::eFilterType filter = Ray::Tent;
+    bool srgb = true;
 
     std::map<std::string, uint32_t> textures;
     std::map<std::string, uint32_t> materials;
     std::map<std::string, uint32_t> meshes;
 
-    auto get_texture = [&](const std::string &name, bool gen_mipmaps) {
+    auto get_texture = [&](const std::string &name, bool srgb, bool gen_mipmaps) {
         auto it = textures.find(name);
         if (it == textures.end()) {
             int w, h;
@@ -50,6 +52,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             tex_desc.data = &data[0];
             tex_desc.w = w;
             tex_desc.h = h;
+            tex_desc.is_srgb = srgb;
             tex_desc.generate_mipmaps = gen_mipmaps;
 
             uint32_t tex_id = new_scene->AddTexture(tex_desc);
@@ -79,6 +82,14 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 view_dir[2] = (float)((const JsNumber &)js_view_dir.at(2)).val;
             }
 
+            if (js_cam.Has("view_up")) {
+                const JsArray &js_view_up = js_cam.at("view_up");
+
+                view_up[0] = (float)((const JsNumber &)js_view_up.at(0)).val;
+                view_up[1] = (float)((const JsNumber &)js_view_up.at(1)).val;
+                view_up[2] = (float)((const JsNumber &)js_view_up.at(2)).val;
+            }
+
             if (js_cam.Has("view_target")) {
                 const JsArray &js_view_target = (const JsArray &)js_cam.at("view_target");
 
@@ -93,6 +104,22 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
                 const JsNumber &js_view_fov = js_cam.at("fov");
 
                 view_fov = (float)js_view_fov.val;
+            }
+
+            if (js_cam.Has("filter")) {
+                const JsString &js_filter = js_cam.at("filter");
+                if (js_filter.val == "box") {
+                    filter = Ray::Box;
+                } else if (js_filter.val == "tent") {
+                    filter = Ray::Tent;
+                } else {
+                    throw std::runtime_error("Unknown filter parameter!");
+                }
+            }
+
+            if (js_cam.Has("srgb")) {
+                const JsLiteral &js_srgb = js_cam.at("srgb");
+                srgb = (js_srgb.val == JS_TRUE);
             }
         }
 
@@ -118,7 +145,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
                 if (js_env.Has("env_map")) {
                     const JsString &js_env_map = js_env.at("env_map");
-                    env_desc.env_map = get_texture(js_env_map.val, false);
+                    env_desc.env_map = get_texture(js_env_map.val, false, false);
                 }
 
                 new_scene->SetEnvironment(env_desc);
@@ -155,7 +182,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
             const JsString &js_type = js_mat_obj.at("type");
 
             const JsString &js_main_tex = js_mat_obj.at("main_texture");
-            mat_desc.main_texture = get_texture(js_main_tex.val, js_type.val != "mix");
+            mat_desc.main_texture = get_texture(js_main_tex.val, js_type.val != "mix", js_type.val != "mix");
 
             if (js_mat_obj.Has("main_color")) {
                 const JsArray &js_main_color = js_mat_obj.at("main_color");
@@ -166,7 +193,7 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
             if (js_mat_obj.Has("normal_map")) {
                 const JsString &js_normal_map = js_mat_obj.at("normal_map");
-                mat_desc.normal_map = get_texture(js_normal_map.val, false);
+                mat_desc.normal_map = get_texture(js_normal_map.val, false, false);
             }
 
             if (js_mat_obj.Has("roughness")) {
@@ -317,9 +344,11 @@ std::shared_ptr<Ray::SceneBase> LoadScene(Ray::RendererBase *r, const JsObject &
 
     Ray::camera_desc_t cam_desc;
     cam_desc.type = Ray::Persp;
-    cam_desc.filter = Ray::Tent;
+    cam_desc.filter = filter;
+    cam_desc.dtype = srgb ? Ray::SRGB : Ray::None;
     memcpy(&cam_desc.origin[0], Ren::ValuePtr(view_origin), 3 * sizeof(float));
     memcpy(&cam_desc.fwd[0], Ren::ValuePtr(view_dir), 3 * sizeof(float));
+    memcpy(&cam_desc.up[0], Ren::ValuePtr(view_up), 3 * sizeof(float));
     cam_desc.fov = view_fov;
     cam_desc.gamma = 1.0f;
     cam_desc.focus_distance = 1.0f;
@@ -421,6 +450,10 @@ std::tuple<std::vector<float>, std::vector<unsigned>, std::vector<unsigned>> Loa
     std::vector<float> v, vn, vt;
 
     std::ifstream in_file(file_name, std::ios::binary);
+    if (!in_file) {
+        throw std::runtime_error("File can not be opened!");
+    }
+
     std::string line;
     while (std::getline(in_file, line)) {
         std::stringstream ss(line);
@@ -784,6 +817,9 @@ std::vector<Ray::pixel_color8_t> Load_stb_image(const std::string &name, int &w,
     
     int channels;
     uint8_t *img_data = stbi_load(name.c_str(), &w, &h, &channels, 4);
+    if (!img_data) {
+        throw std::runtime_error("Cannot load image!");
+    }
 
     std::vector<Ray::pixel_color8_t> tex_data(w * h);
     memcpy(&tex_data[0].r, img_data, w * h * sizeof(Ray::pixel_color8_t));

@@ -190,6 +190,8 @@ void JsObject::Push(const std::string &s, const JsElement &el) {
 }
 
 bool JsObject::Read(std::istream &in) {
+    elements.clear();
+
     char c;
     if (!in.read(&c, 1) || c != '{') {
         std::cerr << "JsObject::Read(): Expected '{' instead of " << c << std::endl;
