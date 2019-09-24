@@ -149,17 +149,19 @@ const char Ray::phi_table[][17] = { { 2,  2,  2,  2,  2,  3,  3,  3,  4,  4,  4,
                                     { 14, 14, 13, 13, 13, 13, 12, 12, 12, 11, 11, 10, 10, 10, 10, 10, 9  },
                                     { 14, 13, 13, 13, 13, 12, 12, 12, 12, 11, 11, 11, 10, 10, 10, 10, 10 } };
 
-const int Ray::sampling_pattern[] = { 0, 1, 2, 3,   1, 2, 3, 0,
-                                      2, 3, 0, 1,   3, 0, 1, 2,
-                                      1, 2, 3, 0,   2, 1, 0, 3,
-                                      3, 0, 1, 2,   0, 3, 2, 1,
+const int Ray::ray_packet_pixel_layout[] = {
+    0, 1, 2, 3,   1, 2, 3, 0,
+    2, 3, 0, 1,   3, 0, 1, 2,
+    1, 2, 3, 0,   2, 1, 0, 3,
+    3, 0, 1, 2,   0, 3, 2, 1,
 
-                                      2, 3, 0, 1,   1, 0, 3, 2,
-                                      0, 1, 2, 3,   0, 3, 2, 1,
-                                      3, 2, 1, 0,   3, 2, 1, 0,
-                                      1, 0, 3, 2,   2, 1, 0, 3 };
+    2, 3, 0, 1,   1, 0, 3, 2,
+    0, 1, 2, 3,   0, 3, 2, 1,
+    3, 2, 1, 0,   3, 2, 1, 0,
+    1, 0, 3, 2,   2, 1, 0, 3
+};
 
-bool Ray::PreprocessTri(const float *p, int stride, tri_accel_t *acc) {
+bool Ray::PreprocessTri(const float *p, int stride, tri_accel_t *out_acc) {
     // from "Ray-Triangle Intersection Algorithm for Modern CPU Architectures" [2007]
 
     if (!stride) stride = 3;
@@ -185,32 +187,78 @@ bool Ray::PreprocessTri(const float *p, int stride, tri_accel_t *acc) {
     }
 
     if (std::abs(n[w]) > FLT_EPS) {
-        acc->nu = n[u] / n[w];
-        acc->nv = n[v] / n[w];
-        acc->pu = p[u];
-        acc->pv = p[v];
-        acc->np = acc->nu * acc->pu + acc->nv * acc->pv + p[w];
+        out_acc->nu = n[u] / n[w];
+        out_acc->nv = n[v] / n[w];
+        out_acc->pu = p[u];
+        out_acc->pv = p[v];
+        out_acc->np = out_acc->nu * out_acc->pu + out_acc->nv * out_acc->pv + p[w];
 
         int sign = w == 1 ? -1 : 1;
-        acc->e0u = sign * e0[u] / n[w];
-        acc->e0v = sign * e0[v] / n[w];
-        acc->e1u = sign * e1[u] / n[w];
-        acc->e1v = sign * e1[v] / n[w];
+        out_acc->e0u = sign * e0[u] / n[w];
+        out_acc->e0v = sign * e0[v] / n[w];
+        out_acc->e1u = sign * e1[u] / n[w];
+        out_acc->e1v = sign * e1[v] / n[w];
 
-        acc->ci = w;
-        if (std::abs(acc->nu) < axis_aligned_normal_eps && std::abs(acc->nv) < axis_aligned_normal_eps) {
-            acc->ci |= TRI_AXIS_ALIGNED_BIT;
+        out_acc->ci = w;
+        if (std::abs(out_acc->nu) < axis_aligned_normal_eps && std::abs(out_acc->nv) < axis_aligned_normal_eps) {
+            out_acc->ci |= TRI_AXIS_ALIGNED_BIT;
         }
         if (n[w] < 0) {
-            acc->ci |= TRI_INV_NORMAL_BIT;
+            out_acc->ci |= TRI_INV_NORMAL_BIT;
         }
 
-        assert((acc->ci & TRI_W_BITS) == w);
+        assert((out_acc->ci & TRI_W_BITS) == w);
         return true;
     } else {
-        (*acc) = InvalidTriangle;
+        (*out_acc) = InvalidTriangle;
         return false;
     }
+}
+
+bool Ray::PreprocessTri(const float *p, int stride, tri_accel2_t *out_acc) {
+    if (!stride) stride = 3;
+
+    // edges
+    float e0[3] = { p[stride] - p[0], p[stride + 1] - p[1], p[stride + 2] - p[2] },
+          e1[3] = { p[stride * 2] - p[0], p[stride * 2 + 1] - p[1], p[stride * 2 + 2] - p[2] };
+
+    float n[3] = {
+        e0[1] * e1[2] - e0[2] * e1[1],
+        e0[2] * e1[0] - e0[0] * e1[2],
+        e0[0] * e1[1] - e0[1] * e1[0]
+    };
+    float d = -(n[0] * p[0] + n[1] * p[1] + n[2] * p[2]);
+
+    if (std::abs(n[0]) < FLT_EPS && std::abs(n[1]) < FLT_EPS && std::abs(n[2]) < FLT_EPS) {
+        // degenerate triangle
+        return false;
+    }
+
+    memcpy(&out_acc->normal_plane[0], &n[0], 3 * sizeof(float));
+    out_acc->normal_plane[3] = d;
+
+    float n1[3] = {
+        e0[1] * n[2] - e0[2] * n[1],
+        e0[2] * n[0] - e0[0] * n[2],
+        e0[0] * n[1] - e0[1] * n[0]
+    };
+    float d1 = -(n1[0] * p[0] + n1[1] * p[1] + n1[2] * p[2]);
+
+    memcpy(&out_acc->edge_planes[0][0], &n1[0], 3 * sizeof(float));
+    out_acc->edge_planes[0][3] = d;
+
+#if 0
+    float n1[3] = {
+        e0[1] * n[2] - e0[2] * n[1],
+        e0[2] * n[0] - e0[0] * n[2],
+        e0[0] * n[1] - e0[1] * n[0]
+    };
+    float d1 = -(n1[0] * p[0] + n1[1] * p[1] + n1[2] * p[2]);
+
+    memcpy(&out_acc->edge_planes[0][0], &n1[0], 3 * sizeof(float));
+    out_acc->edge_planes[0][3] = d;
+#endif
+    return true;
 }
 
 void Ray::ExtractPlaneNormal(const tri_accel_t &tri, float *out_normal) {
@@ -233,12 +281,8 @@ uint32_t Ray::PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, si
 
     std::vector<prim_t> primitives;
 
-    size_t tris_start = out_tris.size();
-    size_t tris_count = vtx_indices_count / 3;
-    out_tris.resize(tris_start + tris_count);
-
     const float *positions = attrs;
-    size_t attr_stride = AttrStrides[layout];
+    const size_t attr_stride = AttrStrides[layout];
 
     for (size_t j = 0; j < vtx_indices_count; j += 3) {
         float p[9];
@@ -251,7 +295,7 @@ uint32_t Ray::PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, si
         memcpy(&p[3], &positions[i1 * attr_stride], 3 * sizeof(float));
         memcpy(&p[6], &positions[i2 * attr_stride], 3 * sizeof(float));
 
-        PreprocessTri(&p[0], 0, &out_tris[tris_start + j / 3]);
+        //PreprocessTri(&p[0], 0, &out_tris[tris_start + j / 3]);
 
         Ref::simd_fvec3 _min = min(Ref::simd_fvec3{ &p[0] }, min(Ref::simd_fvec3{ &p[3] }, Ref::simd_fvec3{ &p[6] })),
                         _max = max(Ref::simd_fvec3{ &p[0] }, max(Ref::simd_fvec3{ &p[3] }, Ref::simd_fvec3{ &p[6] }));
@@ -259,7 +303,7 @@ uint32_t Ray::PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, si
         primitives.push_back({ i0, i1, i2, _min, _max });
     }
 
-    size_t indices_start = out_tri_indices.size();
+    const size_t indices_start = out_tri_indices.size();
     uint32_t num_out_nodes;
     if (!s.use_fast_bvh_build) {
         num_out_nodes = PreprocessPrims_SAH(&primitives[0], primitives.size(), positions, attr_stride, s, out_nodes, out_tri_indices);
@@ -267,9 +311,30 @@ uint32_t Ray::PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, si
         num_out_nodes = PreprocessPrims_HLBVH(&primitives[0], primitives.size(), out_nodes, out_tri_indices);
     }
 
+    const size_t tris_start = out_tris.size(), tris_count = out_tri_indices.size() - indices_start;
+    out_tris.resize(tris_start + tris_count);
+
     for (size_t i = indices_start; i < out_tri_indices.size(); i++) {
+        uint32_t j = out_tri_indices[i];
+
+        float p[9];
+
+        uint32_t i0 = vtx_indices[j * 3 + 0] + base_vertex,
+                 i1 = vtx_indices[j * 3 + 1] + base_vertex,
+                 i2 = vtx_indices[j * 3 + 2] + base_vertex;
+
+        memcpy(&p[0], &positions[i0 * attr_stride], 3 * sizeof(float));
+        memcpy(&p[3], &positions[i1 * attr_stride], 3 * sizeof(float));
+        memcpy(&p[6], &positions[i2 * attr_stride], 3 * sizeof(float));
+
+        PreprocessTri(&p[0], 0, &out_tris[tris_start + i]);
+
         out_tri_indices[i] += (uint32_t)tris_start;
     }
+
+    /*for (size_t i = indices_start; i < out_tri_indices.size(); i++) {
+        out_tri_indices[i] += (uint32_t)tris_start;
+    }*/
 
     return num_out_nodes;
 }

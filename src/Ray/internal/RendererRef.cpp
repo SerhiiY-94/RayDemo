@@ -35,6 +35,7 @@ void Ray::Ref::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
     sc_data.mnodes = s->mnodes_.empty() ? nullptr : &s->mnodes_[0];
     sc_data.tris = s->tris_.empty() ? nullptr : &s->tris_[0];
     sc_data.tri_indices = s->tri_indices_.empty() ? nullptr : &s->tri_indices_[0];
+    sc_data.tri_materials = s->tri_materials_.empty() ? nullptr : &s->tri_materials_[0];
     sc_data.materials = s->materials_.empty() ? nullptr : &s->materials_[0];
     sc_data.textures = s->textures_.empty() ? nullptr : &s->textures_[0];
     sc_data.lights = s->lights_.empty() ? nullptr : &s->lights_[0];
@@ -164,7 +165,7 @@ void Ray::Ref::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
         
         if (cam.pass_settings.flags & UseCoherentSampling) {
             const int blck_x = x % 8, blck_y = y % 8;
-            pass_info.rand_index = sampling_pattern[blck_y * 8 + blck_x];
+            pass_info.rand_index = ray_packet_pixel_layout[blck_y * 8 + blck_x];
         }
 
         pixel_color_t col = ShadeSurface(pass_info, inter, r, &region.halton_seq[0], sc_data, macro_tree_root, light_tree_root,
@@ -261,7 +262,7 @@ void Ray::Ref::Renderer::RenderScene(const std::shared_ptr<SceneBase> &_s, Regio
 
             if (cam.pass_settings.flags & UseCoherentSampling) {
                 const int blck_x = x % 8, blck_y = y % 8;
-                pass_info.rand_index = sampling_pattern[blck_y * 8 + blck_x];
+                pass_info.rand_index = ray_packet_pixel_layout[blck_y * 8 + blck_x];
             }
 
             pixel_color_t col = ShadeSurface(pass_info, inter, r, &region.halton_seq[0], sc_data, macro_tree_root, light_tree_root,

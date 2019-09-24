@@ -35,6 +35,12 @@ struct tri_accel_t {
 };
 static_assert(sizeof(tri_accel_t) == 48, "!");
 
+struct tri_accel2_t {
+    float normal_plane[4];
+    float edge_planes[2][4];
+};
+static_assert(sizeof(tri_accel2_t) == 48, "!");
+
 extern const tri_accel_t InvalidTriangle;
 
 const uint8_t TRI_W_BITS = 0b00000011;
@@ -118,6 +124,13 @@ const int MIX_MAT2 = 3;
 
 const int MAX_STACK_SIZE = 32;
 
+struct tri_mat_data_t {
+    uint16_t front_mi, back_mi;
+};
+
+const int MATERIAL_SOLID_BIT  = 0b1000000000000000;
+const int MATERIAL_INDEX_BITS = 0b0011111111111111;
+
 struct material_t {
     uint32_t textures[MAX_MATERIAL_TEXTURES];
     float main_color[3], pad;
@@ -171,7 +184,8 @@ force_inline long ClearBit(long mask, long index) {
 }
 
 // Creates struct of precomputed triangle data for faster Plucker intersection test
-bool PreprocessTri(const float *p, int stride, tri_accel_t *acc);
+bool PreprocessTri(const float *p, int stride, tri_accel_t *out_acc);
+bool PreprocessTri(const float *p, int stride, tri_accel2_t *out_acc);
 // Extructs planar triangle normal from precomputed triangle data
 void ExtractPlaneNormal(const tri_accel_t &tri, float *out_normal);
 
@@ -260,7 +274,7 @@ extern const char omega_table[];
 extern const float phi_step;
 extern const char phi_table[][17];
 
-extern const int sampling_pattern[];
+extern const int ray_packet_pixel_layout[];
 
 struct ray_chunk_t {
     uint32_t hash, base, size;
@@ -272,7 +286,7 @@ struct pass_info_t {
     pass_settings_t settings;
 
     force_inline bool should_add_direct_light() const {
-        // skip for primary bounce if we want only indirect light contribution
+        // skip primary bounce if we want only indirect light contribution
         return !(settings.flags & SkipDirectLight) || bounce > 2;
     }
 
@@ -304,6 +318,7 @@ struct scene_data_t {
     const mbvh_node_t       *mnodes;
     const tri_accel_t       *tris;
     const uint32_t          *tri_indices;
+    const tri_mat_data_t    *tri_materials;
     const material_t        *materials;
     const texture_t         *textures;
     const light_t           *lights;

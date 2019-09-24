@@ -180,9 +180,12 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
         nodes_.clear();
     }
 
+    const uint32_t tri_materials_start = (uint32_t)tri_materials_.size();
+    tri_materials_.resize(tri_materials_start + (_m.vtx_indices_count / 3));
+
     // init triangle materials
     for (const shape_desc_t &s : _m.shapes) {
-        bool is_solid = true;
+        bool is_front_solid = true, is_back_solid = true;
 
         uint32_t material_stack[32];
         material_stack[0] = s.mat_index;
@@ -195,12 +198,27 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
                 material_stack[material_count++] = mat.textures[MIX_MAT1];
                 material_stack[material_count++] = mat.textures[MIX_MAT2];
             } else if (mat.type == TransparentMaterial) {
-                is_solid = false;
+                is_front_solid = false;
                 break;
             }
         }
 
-        for (size_t i = s.vtx_start; i < s.vtx_start + s.vtx_count; i += 3) {
+        material_stack[0] = s.back_mat_index;
+        material_count = 1;
+
+        while (material_count) {
+            material_t &mat = materials_[material_stack[--material_count]];
+
+            if (mat.type == MixMaterial) {
+                material_stack[material_count++] = mat.textures[MIX_MAT1];
+                material_stack[material_count++] = mat.textures[MIX_MAT2];
+            } else if (mat.type == TransparentMaterial) {
+                is_back_solid = false;
+                break;
+            }
+        }
+
+        /*for (size_t i = s.vtx_start; i < s.vtx_start + s.vtx_count; i += 3) {
             tri_accel_t &tri = tris_[tris_start + i / 3];
 
             if (is_solid) {
@@ -211,6 +229,23 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
 
             tri.mi = s.mat_index;
             tri.back_mi = s.back_mat_index;
+        }*/
+
+        for (size_t i = s.vtx_start; i < s.vtx_start + s.vtx_count; i += 3) {
+            tri_mat_data_t &tri_mat = tri_materials_[tri_materials_start + i / 3];
+
+            assert(s.mat_index < (1 << 14) && "Not enough bits to reference material!");
+            assert(s.back_mat_index < (1 << 14) && "Not enough bits to reference material!");
+
+            tri_mat.front_mi = uint16_t(s.mat_index);
+            if (is_front_solid) {
+                tri_mat.front_mi |= MATERIAL_SOLID_BIT;
+            }
+
+            tri_mat.back_mi = uint16_t(s.back_mat_index);
+            if (is_back_solid) {
+                tri_mat.back_mi |= MATERIAL_SOLID_BIT;
+            }
         }
     }
 
@@ -223,7 +258,7 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
         new_vtx_indices.push_back(_m.vtx_indices[i] + _m.base_vertex + (uint32_t)vertices_.size());
     }
 
-    size_t stride = AttrStrides[_m.layout];
+    const size_t stride = AttrStrides[_m.layout];
 
     // add attributes
     size_t new_vertices_start = vertices_.size();

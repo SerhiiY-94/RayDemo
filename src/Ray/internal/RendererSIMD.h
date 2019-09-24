@@ -266,7 +266,7 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const std::shared_ptr<SceneB
         if (cam.pass_settings.flags & UseCoherentSampling) {
             for (int j = 0; j < S; j++) {
                 const int blck_x = x[j] % 8, blck_y = y[j] % 8;
-                index[j] = sampling_pattern[blck_y * 8 + blck_x];
+                index[j] = ray_packet_pixel_layout[blck_y * 8 + blck_x];
             }
         } else {
             index = y * w + x;
@@ -354,7 +354,7 @@ void Ray::NS::RendererSIMD<DimX, DimY>::RenderScene(const std::shared_ptr<SceneB
             if (cam.pass_settings.flags & UseCoherentSampling) {
                 for (int j = 0; j < S; j++) {
                     const int blck_x = x[j] % 8, blck_y = y[j] % 8;
-                    index[j] = sampling_pattern[blck_y * 8 + blck_x];
+                    index[j] = ray_packet_pixel_layout[blck_y * 8 + blck_x];
                 }
             } else {
                 index = y * w + x;

@@ -738,12 +738,13 @@ void Ray::Ref::SortRays_GPU(ray_packet_t *rays, size_t rays_count, const float r
     }
 }
 
-bool Ray::Ref::IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel_t *tris, int num_tris, int obj_index, hit_data_t &out_inter) {
-    hit_data_t inter;
+bool Ray::Ref::IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel_t *tris, int tri_start, int tri_end, int obj_index, hit_data_t &out_inter) {
+    hit_data_t inter{ Uninitialize };
+    inter.mask_values[0] = 0;
     inter.obj_indices[0] = obj_index;
     inter.t = out_inter.t;
 
-    for (int i = 0; i < num_tris; i++) {
+    for (int i = tri_start; i < tri_end; i++) {
         _IntersectTri(r, tris[i], i, inter);
     }
 
@@ -1460,7 +1461,10 @@ TRAVERSE:
                 goto TRAVERSE;
             }
         } else {
-            res |= IntersectTris_ClosestHit(r, tris, &tri_indices[nodes[cur.index].child[0] & PRIM_INDEX_BITS], nodes[cur.index].child[1], obj_index, inter);
+            //res |= IntersectTris_ClosestHit(r, tris, &tri_indices[nodes[cur.index].child[0] & PRIM_INDEX_BITS], nodes[cur.index].child[1], obj_index, inter);
+            int tri_start = nodes[cur.index].child[0] & PRIM_INDEX_BITS,
+                tri_end = tri_start + nodes[cur.index].child[1];
+            res |= IntersectTris_ClosestHit(r, tris, tri_start, tri_end, obj_index, inter);
         }
     }
 
@@ -1822,25 +1826,29 @@ float Ray::Ref::ComputeVisibility(const simd_fvec3 &p1, const simd_fvec3 &p2, co
         }
         if (!sh_inter.mask_values[0]) break;
 
-        const tri_accel_t &tri = sc.tris[sh_inter.prim_indices[0]];
-        if (tri.ci & TRI_SOLID_BIT) {
-            visibility = 0;
+        const uint32_t tri_index = sc.tri_indices[sh_inter.prim_indices[0]];
+
+        // TODO: Fix this (back material might be not solid)
+        if (sc.tri_materials[tri_index].front_mi & MATERIAL_SOLID_BIT) {
+            visibility = 0.0f;
             break;
         }
 
-        const material_t *mat = &sc.materials[tri.mi];
+        const material_t *mat = &sc.materials[sc.tri_materials[tri_index].front_mi & MATERIAL_INDEX_BITS];
 
         const transform_t *tr = &sc.transforms[sc.mesh_instances[sh_inter.obj_indices[0]].tr_index];
 
-        const vertex_t &v1 = sc.vertices[sc.vtx_indices[sh_inter.prim_indices[0] * 3 + 0]];
-        const vertex_t &v2 = sc.vertices[sc.vtx_indices[sh_inter.prim_indices[0] * 3 + 1]];
-        const vertex_t &v3 = sc.vertices[sc.vtx_indices[sh_inter.prim_indices[0] * 3 + 2]];
+        const vertex_t &v1 = sc.vertices[sc.vtx_indices[tri_index * 3 + 0]];
+        const vertex_t &v2 = sc.vertices[sc.vtx_indices[tri_index * 3 + 1]];
+        const vertex_t &v3 = sc.vertices[sc.vtx_indices[tri_index * 3 + 2]];
 
         const auto I = simd_fvec3(r.d);
 
         float w = 1.0f - sh_inter.u - sh_inter.v;
         simd_fvec3 sh_N = simd_fvec3(v1.n) * w + simd_fvec3(v2.n) * sh_inter.u + simd_fvec3(v3.n) * sh_inter.v;
         simd_fvec2 sh_uvs = simd_fvec2(v1.t[0]) * w + simd_fvec2(v2.t[0]) * sh_inter.u + simd_fvec2(v3.t[0]) * sh_inter.v;
+
+        const tri_accel_t &tri = sc.tris[sh_inter.prim_indices[0]];
 
         simd_fvec3 sh_plane_N;
         ExtractPlaneNormal(tri, &sh_plane_N[0]);
@@ -1851,24 +1859,24 @@ float Ray::Ref::ComputeVisibility(const simd_fvec3 &p1, const simd_fvec3 &p2, co
         bool is_backfacing = dot(sh_plane_N, I) < 0.0f;
 
         if (is_backfacing) {
-            if (tri.back_mi == 0xffffffff) {
+            if (tri.back_mi == 0xffff) {
                 skip = true;
             } else {
-                mat = &sc.materials[tri.back_mi];
+                mat = &sc.materials[sc.tri_materials[tri_index].back_mi & MATERIAL_INDEX_BITS];
                 sh_plane_N = -sh_plane_N;
             }
         }
 
         if (!skip) {
-            int sh_rand_hash = hash(rand_hash2);
-            float sh_rand_offset = construct_float(sh_rand_hash);
+            const int sh_rand_hash = hash(rand_hash2);
+            const float sh_rand_offset = construct_float(sh_rand_hash);
 
             float _sh_unused;
             float sh_r = std::modf(halton[hi] + sh_rand_offset, &_sh_unused);
 
             // resolve mix material
             while (mat->type == MixMaterial) {
-                float mix_val = SampleBilinear(tex_atlas, sc.textures[mat->textures[MAIN_TEXTURE]], sh_uvs, 0)[0] * mat->strength;
+                const float mix_val = SampleBilinear(tex_atlas, sc.textures[mat->textures[MAIN_TEXTURE]], sh_uvs, 0)[0] * mat->strength;
 
                 if (sh_r > mix_val) {
                     mat = &sc.materials[mat->textures[MIX_MAT1]];
@@ -1880,7 +1888,7 @@ float Ray::Ref::ComputeVisibility(const simd_fvec3 &p1, const simd_fvec3 &p2, co
             }
 
             if (mat->type != TransparentMaterial) {
-                visibility = 0;
+                visibility = 0.0f;
                 break;
             }
         }
@@ -2073,14 +2081,15 @@ Ray::pixel_color_t Ray::Ref::ShadeSurface(const pass_info_t &pi, const hit_data_
     const auto P = simd_fvec3(ray.o) + inter.t * I;
 
     const tri_accel_t &tri = sc.tris[inter.prim_indices[0]];
+    const uint32_t tri_index = sc.tri_indices[inter.prim_indices[0]];
 
-    const material_t *mat = &sc.materials[tri.mi];
+    const material_t *mat = &sc.materials[sc.tri_materials[tri_index].front_mi & MATERIAL_INDEX_BITS];
 
     const transform_t *tr = &sc.transforms[sc.mesh_instances[inter.obj_indices[0]].tr_index];
-
-    const vertex_t &v1 = sc.vertices[sc.vtx_indices[inter.prim_indices[0] * 3 + 0]];
-    const vertex_t &v2 = sc.vertices[sc.vtx_indices[inter.prim_indices[0] * 3 + 1]];
-    const vertex_t &v3 = sc.vertices[sc.vtx_indices[inter.prim_indices[0] * 3 + 2]];
+    
+    const vertex_t &v1 = sc.vertices[sc.vtx_indices[tri_index * 3 + 0]];
+    const vertex_t &v2 = sc.vertices[sc.vtx_indices[tri_index * 3 + 1]];
+    const vertex_t &v3 = sc.vertices[sc.vtx_indices[tri_index * 3 + 2]];
 
     float w = 1.0f - inter.u - inter.v;
     simd_fvec3 N = simd_fvec3(v1.n) * w + simd_fvec3(v2.n) * inter.u + simd_fvec3(v3.n) * inter.v;
@@ -2093,10 +2102,10 @@ Ray::pixel_color_t Ray::Ref::ShadeSurface(const pass_info_t &pi, const hit_data_
     bool is_backfacing = dot(plane_N, I) > 0.0f;
 
     if (is_backfacing) {
-        if (tri.back_mi == 0xffffffff) {
+        if (sc.tri_materials[tri_index].back_mi == 0xffff) {
             return pixel_color_t{ 0.0f, 0.0f, 0.0f, 0.0f };
         } else {
-            mat = &sc.materials[tri.back_mi];
+            mat = &sc.materials[sc.tri_materials[tri_index].back_mi & MATERIAL_INDEX_BITS];
             plane_N = -plane_N;
             N = -N;
         }
