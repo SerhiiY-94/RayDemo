@@ -33,7 +33,7 @@ template bool Traverse_MacroTree_WithStack_ClosestHit<RayPacketSize>(const ray_p
                                                                      const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<RayPacketSize> &inter);
 template bool Traverse_MacroTree_WithStack_ClosestHit<RayPacketSize>(const ray_packet_t<RayPacketSize> &r, const simd_ivec<RayPacketSize> &ray_mask, const mbvh_node_t *oct_nodes, uint32_t node_index,
                                                                      const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                                                     const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<RayPacketSize> &inter);
+                                                                     const tri_accel_t *tris, const tri_accel2_t *tris2, const uint32_t *tri_indices, hit_data_t<RayPacketSize> &inter);
 template bool Traverse_MacroTree_WithStack_AnyHit<RayPacketSize>(const ray_packet_t<RayPacketSize> &r, const simd_ivec<RayPacketSize> &ray_mask, const bvh_node_t *nodes, uint32_t node_index,
                                                                  const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
                                                                  const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<RayPacketSize> &inter, simd_ivec<RayPacketSize> &is_solid_hit);

@@ -49,6 +49,7 @@ protected:
     std::vector<bvh_node_t>     nodes_;
     aligned_vector<mbvh_node_t> mnodes_;
     std::vector<tri_accel_t>    tris_;
+    std::vector<tri_accel2_t>   tris2_;
     std::vector<uint32_t>       tri_indices_;
     std::vector<tri_mat_data_t> tri_materials_;
     std::vector<transform_t>    transforms_;

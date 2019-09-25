@@ -36,8 +36,9 @@ struct tri_accel_t {
 static_assert(sizeof(tri_accel_t) == 48, "!");
 
 struct tri_accel2_t {
-    float normal_plane[4];
-    float edge_planes[2][4];
+    float n_plane[4];
+    float u_plane[4];
+    float v_plane[4];
 };
 static_assert(sizeof(tri_accel2_t) == 48, "!");
 
@@ -191,7 +192,7 @@ void ExtractPlaneNormal(const tri_accel_t &tri, float *out_normal);
 
 // Builds BVH for mesh and precomputes triangle data
 uint32_t PreprocessMesh(const float *attrs, const uint32_t *vtx_indices, size_t vtx_indices_count, eVertexLayout layout, int base_vertex,
-                        const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes, std::vector<tri_accel_t> &out_tris, std::vector<uint32_t> &out_indices);
+                        const bvh_settings_t &s, std::vector<bvh_node_t> &out_nodes, std::vector<tri_accel_t> &out_tris, std::vector<tri_accel2_t> &out_tris2, std::vector<uint32_t> &out_tri_indices);
 
 // Recursively builds linear bvh for a set of primitives
 uint32_t EmitLBVH_Recursive(const prim_t *prims, const uint32_t *indices, const uint32_t *morton_codes, uint32_t prim_index, uint32_t prim_count, uint32_t index_offset, int bit_index, std::vector<bvh_node_t> &out_nodes);
@@ -317,6 +318,7 @@ struct scene_data_t {
     const bvh_node_t        *nodes;
     const mbvh_node_t       *mnodes;
     const tri_accel_t       *tris;
+    const tri_accel2_t      *tris2;
     const uint32_t          *tri_indices;
     const tri_mat_data_t    *tri_materials;
     const material_t        *materials;

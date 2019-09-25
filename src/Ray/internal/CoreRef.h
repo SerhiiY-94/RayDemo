@@ -81,52 +81,49 @@ void SortRays_GPU(ray_packet_t *rays, size_t rays_count, const float root_min[3]
                   uint32_t *hash_values, int *head_flags, uint32_t *scan_values, ray_chunk_t *chunks, ray_chunk_t *chunks_temp, uint32_t *skeleton);
 
 // Intersect primitives
-bool IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel_t *tris, int tri_start, int tri_end, int obj_index, hit_data_t &out_inter);
-bool IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel_t *tris, const uint32_t *indices, int num_indices, int obj_index, hit_data_t &out_inter);
-
-bool IntersectTris_AnyHit(const ray_packet_t &r, const tri_accel_t *tris, int num_tris, int obj_index, hit_data_t &out_inter);
-bool IntersectTris_AnyHit(const ray_packet_t &r, const tri_accel_t *tris, const uint32_t *indices, int num_indices, int obj_index, hit_data_t &out_inter);
+bool IntersectTris_ClosestHit(const ray_packet_t &r, const tri_accel2_t *tris, int tri_start, int tri_end, int obj_index, hit_data_t &out_inter);
+bool IntersectTris_AnyHit(const ray_packet_t &r, const tri_accel2_t *tris, const tri_mat_data_t *materials, const uint32_t *indices, int tri_start, int tri_end, int obj_index, hit_data_t &out_inter);
 
 #ifdef USE_STACKLESS_BVH_TRAVERSAL
 // Traverse acceleration structure
 // stack-less cpu-style traversal of outer nodes
 bool Traverse_MacroTree_Stackless_CPU(const ray_packet_t &r, const bvh_node_t *nodes, uint32_t root_index,
                                       const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                      const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                      const tri_accel2_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
 // stack-less gpu-style traversal of outer nodes
 bool Traverse_MacroTree_Stackless_GPU(const ray_packet_t &r, const bvh_node_t *nodes, uint32_t root_index,
                                       const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                      const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                      const tri_accel2_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
 // stack-less cpu-style traversal of inner nodes
 bool Traverse_MicroTree_Stackless_CPU(const ray_packet_t &r, const float inv_d[3], const bvh_node_t *nodes, uint32_t root_index,
-                            const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+                            const tri_accel2_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
 // stack-less gpu-style traversal of inner nodes
 bool Traverse_MicroTree_Stackless_GPU(const ray_packet_t &r, const float inv_d[3], const bvh_node_t *nodes, uint32_t root_index,
-                                      const tri_accel_t *tris, const uint32_t *indices, int obj_index, hit_data_t &inter);
+                                      const tri_accel2_t *tris, const uint32_t *indices, int obj_index, hit_data_t &inter);
 #endif
 
 // traditional bvh traversal with stack for outer nodes
 bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t &r, const bvh_node_t *nodes, uint32_t root_index,
                                              const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                             const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                             const tri_accel2_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
 bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t &r, const mbvh_node_t *oct_nodes, uint32_t root_index,
                                              const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                             const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                             const tri_accel2_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
 bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t &r, const bvh_node_t *nodes, uint32_t root_index,
                                          const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                         const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                         const tri_accel2_t *tris, const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
 bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t &r, const mbvh_node_t *nodes, uint32_t root_index,
                                          const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                         const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t &inter);
+                                         const tri_accel2_t *tris, const tri_mat_data_t *materials, const uint32_t *tri_indices, hit_data_t &inter);
 // traditional bvh traversal with stack for inner nodes
 bool Traverse_MicroTree_WithStack_ClosestHit(const ray_packet_t &r, const float inv_d[3], const bvh_node_t *nodes, uint32_t root_index,
-                                             const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+                                             const tri_accel2_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
 bool Traverse_MicroTree_WithStack_ClosestHit(const ray_packet_t &r, const float inv_d[3], const mbvh_node_t *nodes, uint32_t root_index,
-                                             const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+                                             const tri_accel2_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
 bool Traverse_MicroTree_WithStack_AnyHit(const ray_packet_t &r, const float inv_d[3], const bvh_node_t *nodes, uint32_t root_index,
-                                         const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+                                         const tri_accel2_t *tris, const tri_mat_data_t *materials, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
 bool Traverse_MicroTree_WithStack_AnyHit(const ray_packet_t &r, const float inv_d[3], const mbvh_node_t *nodes, uint32_t root_index,
-                                         const tri_accel_t *tris, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
+                                         const tri_accel2_t *tris, const tri_mat_data_t *materials, const uint32_t *tri_indices, int obj_index, hit_data_t &inter);
 
 // BRDFs
 float BRDF_OrenNayar(const simd_fvec3 &L, const simd_fvec3 &I, const simd_fvec3 &N, const simd_fvec3 &B, float sigma);

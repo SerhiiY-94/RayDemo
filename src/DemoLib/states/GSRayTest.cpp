@@ -181,6 +181,8 @@ void GSRayTest::Draw(uint64_t dt_us) {
             }
         }
 
+        //cam_desc.max_total_depth = 0;
+
         cam_desc.use_coherent_sampling = use_coherent_sampling_;
 
         ray_scene_->SetCamera(0, cam_desc);

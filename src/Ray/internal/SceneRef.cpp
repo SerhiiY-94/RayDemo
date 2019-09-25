@@ -167,7 +167,7 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
     s.use_fast_bvh_build = _m.use_fast_bvh_build;
 
     m.node_index = (uint32_t)nodes_.size();
-    m.node_count = PreprocessMesh(_m.vtx_attrs, _m.vtx_indices, _m.vtx_indices_count, _m.layout, _m.base_vertex, s, nodes_, tris_, tri_indices_);
+    m.node_count = PreprocessMesh(_m.vtx_attrs, _m.vtx_indices, _m.vtx_indices_count, _m.layout, _m.base_vertex, s, nodes_, tris_, tris2_, tri_indices_);
 
     if (use_wide_bvh_) {
         uint32_t before_count = (uint32_t)mnodes_.size();
@@ -176,7 +176,7 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
         m.node_index = new_root;
         m.node_count = (uint32_t)(mnodes_.size() - before_count);
 
-        // nodes_ is treated as temporary storage
+        // nodes_ variable is treated as temporary storage
         nodes_.clear();
     }
 
@@ -217,19 +217,6 @@ uint32_t Ray::Ref::Scene::AddMesh(const mesh_desc_t &_m) {
                 break;
             }
         }
-
-        /*for (size_t i = s.vtx_start; i < s.vtx_start + s.vtx_count; i += 3) {
-            tri_accel_t &tri = tris_[tris_start + i / 3];
-
-            if (is_solid) {
-                tri.ci = (tri.ci | uint32_t(TRI_SOLID_BIT));
-            } else {
-                tri.ci = (tri.ci & ~uint32_t(TRI_SOLID_BIT));
-            }
-
-            tri.mi = s.mat_index;
-            tri.back_mi = s.back_mat_index;
-        }*/
 
         for (size_t i = s.vtx_start; i < s.vtx_start + s.vtx_count; i += 3) {
             tri_mat_data_t &tri_mat = tri_materials_[tri_materials_start + i / 3];

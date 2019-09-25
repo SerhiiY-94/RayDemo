@@ -178,7 +178,9 @@ uint32_t Ray::Ocl::Scene::AddMesh(const mesh_desc_t &_m) {
     s.allow_spatial_splits = _m.allow_spatial_splits;
     s.use_fast_bvh_build = _m.use_fast_bvh_build;
 
-    PreprocessMesh(_m.vtx_attrs, _m.vtx_indices, _m.vtx_indices_count, _m.layout, _m.base_vertex, s, new_nodes, new_tris, new_tri_indices);
+    std::vector<tri_accel2_t> _unused;
+
+    PreprocessMesh(_m.vtx_attrs, _m.vtx_indices, _m.vtx_indices_count, _m.layout, _m.base_vertex, s, new_nodes, new_tris, _unused, new_tri_indices);
     for (size_t i = 0; i < _m.vtx_indices_count; i++) {
         new_vtx_indices.push_back(_m.vtx_indices[i] + _m.base_vertex + (uint32_t)vertices_.size());
     }

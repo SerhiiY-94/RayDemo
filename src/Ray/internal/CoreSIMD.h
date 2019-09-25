@@ -121,7 +121,7 @@ bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const sim
 template <int S>
 bool Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *mnodes, uint32_t node_index,
                                              const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                             const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter);
+                                             const tri_accel_t *tris, const tri_accel2_t *tris2, const uint32_t *tri_indices, hit_data_t<S> &inter);
 template <int S>
 bool Traverse_MacroTree_WithStack_AnyHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const bvh_node_t *nodes, uint32_t node_index,
                                          const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
@@ -1868,7 +1868,7 @@ bool Ray::NS::Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, 
 template <int S>
 bool Ray::NS::Traverse_MacroTree_WithStack_ClosestHit(const ray_packet_t<S> &r, const simd_ivec<S> &ray_mask, const mbvh_node_t *nodes, uint32_t node_index,
                                                       const mesh_instance_t *mesh_instances, const uint32_t *mi_indices, const mesh_t *meshes, const transform_t *transforms,
-                                                      const tri_accel_t *tris, const uint32_t *tri_indices, hit_data_t<S> &inter) {
+                                                      const tri_accel_t *tris, const tri_accel2_t *tris2, const uint32_t *tri_indices, hit_data_t<S> &inter) {
     bool res = false;
 
     simd_fvec<S> inv_d[3], neg_inv_d_o[3];
