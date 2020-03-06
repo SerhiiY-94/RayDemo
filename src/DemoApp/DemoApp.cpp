@@ -32,6 +32,10 @@ extern "C" {
     // Enable High Performance Graphics while using Integrated Graphics
     DLL_EXPORT int32_t NvOptimusEnablement = 0x00000001;        // Nvidia
     DLL_EXPORT int AmdPowerXpressRequestHighPerformance = 1;    // AMD
+
+#ifdef _WIN32
+    DLL_IMPORT int __stdcall SetProcessDPIAware();
+#endif
 }
 
 DemoApp::DemoApp() : quit_(false) {
@@ -44,6 +48,11 @@ DemoApp::~DemoApp() {
 
 int DemoApp::Init(int w, int h, const char *scene_name, bool nogpu, bool coherent, bool copy_lib) {
 #if !defined(__ANDROID__)
+#ifdef _WIN32
+    int dpi_result = SetProcessDPIAware();
+    (void)dpi_result;
+#endif
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return -1;
     }
