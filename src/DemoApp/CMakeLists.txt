@@ -15,10 +15,12 @@ IF(WIN32)
 			set(LIBS opengl32 SDL2 SDL2_mixer)
 		endif()
     ENDIF(SDL_STATIC)
-ELSE(WIN32)
+ELSEIF(UNIX AND NOT APPLE)
     #set(LIBS X11 :libSDL2.a dl pthread GL glut c)
     set(LIBS X11 SDL2 dl pthread GL c)
-ENDIF(WIN32)
+ELSE()
+    set(LIBS SDL2)
+ENDIF()
 
 set(SOURCE_FILES    main.cpp
                     DemoApp.h

@@ -356,7 +356,7 @@ void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu, bool coh
     } else {
         demo_lib_ = Sys::DynLib{ "DemoLib.dll" };
     }
-#else
+#elif defined(__linux__)
     GameBase * (*p_create_viewer)(int w, int h, const char *local_dir, const char *scene_name, int nogpu, int coherent) = nullptr;
 
     if (copy_lib) {
@@ -365,6 +365,16 @@ void DemoApp::LoadLib(int w, int h, const char *scene_name, bool nogpu, bool coh
     } else {
         demo_lib_ = Sys::DynLib{ "./DemoLib.so" };
     }
+#else
+    GameBase * (*p_create_viewer)(int w, int h, const char *local_dir, const char *scene_name, int nogpu, int coherent) = nullptr;
+
+    if (copy_lib) {
+        if (system(R"(cp "DemoLib.dylib" "DemoLib_.dylib")") == -1) LOGE("system call failed");
+        demo_lib_ = Sys::DynLib{ "./DemoLib_.dylib" };
+    } else {
+        demo_lib_ = Sys::DynLib{ "./DemoLib.dylib" };
+    }
+
 #endif
 
     if (demo_lib_) {
