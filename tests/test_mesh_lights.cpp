@@ -123,7 +123,7 @@ void test_mesh_lights() {
             // mode 1 - with additional SH generation, different sampling method is used, so should be tested separately
 
             for (int mode = 0; mode < 2; mode++) {
-                for (auto rt : renderer_types) {
+                for (Ray::eRendererType rt : renderer_types) {
                     s.use_wide_bvh = bvh_type == 0 ? false : true;
 
                     renderer = Ray::CreateRenderer(s, rt);
@@ -133,6 +133,7 @@ void test_mesh_lights() {
                     Ray::camera_desc_t cam_desc;
                     cam_desc.type = Ray::Persp;
                     cam_desc.filter = Ray::Box;
+                    cam_desc.dtype = Ray::None;
                     memcpy(&cam_desc.origin[0], &view_origin[0], 3 * sizeof(float));
                     memcpy(&cam_desc.fwd[0], &view_dir[0], 3 * sizeof(float));
                     cam_desc.fov = 45.0f;
