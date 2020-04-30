@@ -66,7 +66,7 @@ Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, int
         std::shared_ptr<Ray::RendererBase> ray_renderer;
 
         if (nogpu) {
-            ray_renderer = Ray::CreateRenderer(s, Ray::RendererRef | Ray::RendererSSE2 | Ray::RendererAVX | Ray::RendererAVX2);
+            ray_renderer = Ray::CreateRenderer(s, Ray::RendererRef /*| Ray::RendererSSE2 | Ray::RendererAVX | Ray::RendererAVX2*/);
         } else {
             ray_renderer = Ray::CreateRenderer(s);
         }
@@ -81,6 +81,6 @@ Viewer::Viewer(int w, int h, const char *local_dir, const char *_scene_name, int
     input_manager->SetConverter(InputManager::RAW_INPUT_P2_MOVE, nullptr);
 
     auto state_manager = GetComponent<GameStateManager>(STATE_MANAGER_KEY);
-    state_manager->Push(GSCreate(GS_RAY_TEST, this));
+    state_manager->Push(GSCreate(GS_HDR_TEST, this));
 }
 

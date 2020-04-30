@@ -207,7 +207,7 @@ void GSHDRTest::Enter() {
 #endif
     using namespace GSHDRTestInternal;
 
-    img_ = LoadHDR("assets/textures/wells6_hd_low.hdr", img_w_, img_h_);
+    img_ = LoadHDR("assets/textures/studio_small_03_2k.hdr", img_w_, img_h_);
 }
 
 void GSHDRTest::Exit() {
@@ -337,8 +337,8 @@ void GSHDRTest::Draw(uint64_t dt_us) {
             for (uint32_t i = 0; i < width; i++) {
                 double phi = 2.0 * Pi * double(i) / width;
 
-#if 0
-                float res = (float)sample_env(theta, phi);
+#if 1
+                Vec3f res = sample_env(theta, phi);
 #else
                 auto dres = Vec3d{ 0.0 };
 
